@@ -22,14 +22,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
+
 
 TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim2;
+
 
 UART_HandleTypeDef huart1;
-DMA_HandleTypeDef hdma_usart1_rx;
-DMA_HandleTypeDef hdma_usart1_tx;
+
 
 /* USER CODE BEGIN PV */
 // **** Unique parameters per sensor ****
@@ -46,25 +45,33 @@ int i = 0, l = 0, j = 0, m = 0;
 uint32_t V1 = 0, V2 = 0, V3 = 0, V4 = 0;
 uint32_t SRO = 0, SLO = 0;
 long int Cplatedec1 = 0;
-char ch[7];
 
 // Calibration constant (for a 12pF capacitor configuration)
 const long long int KO = 6352825600;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 
 void processADCValues(void);
 void constructXbeeFrame(uint16_t data);
 
 /* USER CODE BEGIN 0 */
+void acquireADCBlock(void)
+{
+    for (int n = 0; n < 2000; n++)
+    {
+        HAL_ADC_Start(&hadc1);                                     // start single conversion
+        HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);          // wait for ADC
+        adcVal[n] = HAL_ADC_GetValue(&hadc1);                      // read value
+        HAL_ADC_Stop(&hadc1);                                      // stop (needed in single-shot mode)
+    }
+}
 
 /* USER CODE END 0 */
 
@@ -78,33 +85,32 @@ int main(void)
   SystemClock_Config();
 
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
-  MX_TIM2_Init();
   MX_USART1_UART_Init();
-
-  HAL_ADC_Start_DMA(&hadc1, adcVal, 1250);
   HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 
   while (1)
   {
     // Wait for the global "ready" signal from the receiver.
-    if (HAL_UART_Receive(&huart1, readyBuffer, sizeof(readyBuffer), HAL_MAX_DELAY) == HAL_OK)
-    {
+    if(HAL_UART_Receive(&huart1, readyBuffer, sizeof(readyBuffer), HAL_MAX_DELAY) == HAL_OK){
+     
       if (readyBuffer[0] == 0xA0)
       {
         // Wait a sensor-specific delay to avoid transmission collisions.
         HAL_Delay(sensorID * BASE_DELAY_MS);
-        
-        // Process ADC values (synchronized measurement)
+
+       // getting the values from cap
+        acquireADCBlock();
+        // Process ADC values
         processADCValues();
         
-        // Construct the transmission frame (includes sensorID)
+        // Construct the transmission frame 
         constructXbeeFrame((uint16_t)Cplatedec1);
         
-        // Transmit the frame via UART DMA.
-        HAL_UART_Transmit_DMA(&huart1, xbeeFrame, sizeof(xbeeFrame));
+        // Transmit the frame via UART.
+         HAL_UART_Transmit(&huart1, xbeeFrame, sizeof(xbeeFrame), HAL_MAX_DELAY);
+         HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
       }
     }
   }
@@ -176,9 +182,9 @@ static void MX_ADC1_Init(void)
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.NbrOfDiscConversion = 1;
-  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T2_TRGO;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -235,15 +241,7 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  
+   
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 19999;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
@@ -274,43 +272,6 @@ static void MX_TIM1_Init(void)
   HAL_TIM_MspPostInit(&htim1);
 }
 
-static void MX_TIM2_Init(void)
-{
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 39;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_COMBINED_RESETTRIGGER;
-  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
-  if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
 
 static void MX_USART1_UART_Init(void)
 {
@@ -330,20 +291,6 @@ static void MX_USART1_UART_Init(void)
   }
 }
 
-static void MX_DMA_Init(void)
-{
-  __HAL_RCC_DMA1_CLK_ENABLE();
-  __HAL_RCC_DMA2_CLK_ENABLE();
-
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-  
-  HAL_NVIC_SetPriority(DMA2_Channel6_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel6_IRQn);
-  
-  HAL_NVIC_SetPriority(DMA2_Channel7_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel7_IRQn);
-}
 
 static void MX_GPIO_Init(void)
 {
@@ -395,25 +342,9 @@ void constructXbeeFrame(uint16_t adcValue)
     xbeeFrame[1] = adcValue & 0xFF;
 }
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
-{
-    processADCValues();
-    
-    sprintf(ch, "%ld\r\n", Cplatedec1);
-    HAL_UART_Transmit_DMA(&huart1, (uint8_t *)ch, sizeof(ch));
-    
-    static int a = 0;
-    a++;
-    if (a == 8000)
-    {
-        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-        a = 0;
-    }
-}
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-}
+
+
 /* USER CODE END 4 */
 
 void Error_Handler(void)
