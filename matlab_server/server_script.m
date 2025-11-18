@@ -1,57 +1,68 @@
-%% MATLAB Receiver Code for Coordinated Sensors
+%% MATLAB Receiver Code for Coordinated Sensors (Cycle-Aligned Logging)
 
-% Configure serial port 
-port = "COM3";              
+port = "COM3";
 baudRate = 115200;
 s = serialport(port, baudRate);
 
-% Optional: configure terminator and flush any data in the buffer
 configureTerminator(s, "LF");
 flush(s);
 
-% Infinite loop: send global ready command and collect sensor responses
+% Storage for each sensor
+responses1 = [];
+responses2 = [];
+responses3 = [];
+responses4 = [];
+
+numSensors = 4;
+
 while true
-    % --- Send Global "Ready" Command ---
-    % The ready command is a 2-byte message:
-    %   Byte 1: 0xA0 (indicates "ready")
-    %   Byte 2: 0x00 (dummy byte)
-    readyCmd = [hex2dec('A0'), hex2dec('00')];
+    
+    %% ---- SEND READY COMMAND ----
+    readyCmd = [hex2dec('A0') hex2dec('00')];
     write(s, readyCmd, "uint8");
-    
-    % --- Collect Sensor Responses ---
-    % Each sensor will respond with a 2-byte frame.
-    % Set a timeout (in seconds) for receiving responses.
-    responses = [];
-    timeout = 0.5;  % seconds
+
+    %% ---- RECEIVE UP TO 4 FRAMES ----
+    receivedCount = 0;
+    maxWaitTime = 0.25;    % 250ms to get all 4 sensors
     tic;
-    while toc < timeout
-        % Check if at least 2 bytes are available
+
+    % Initialize placeholders for this cycle
+    cycleValues = nan(1, numSensors);   % [NaN NaN NaN NaN]
+
+    while receivedCount < numSensors && toc < maxWaitTime
         if s.NumBytesAvailable >= 2
-            % Read 2 bytes as an unsigned 8-bit integer array
-            data = read(s, 2, "uint8");
-            responses = [responses; data];  % store the response
-        end
-    end
-    
-    % --- Process and Display Sensor Data ---
-    if ~isempty(responses)
-        % Loop through each 2-byte response
-        for idx = 1:size(responses, 1)
-            byte1 = responses(idx, 1);
-            byte2 = responses(idx, 2);
-            % Decode sensor ID from high nibble of the first byte
+            frame = read(s, 2, "uint8");
+            receivedCount = receivedCount + 1;
+
+            % Decode
+            byte1 = frame(1);
+            byte2 = frame(2);
+
             sensor_id = bitshift(byte1, -4);
-            % Extract ADC value:
-            %   Lower 4 bits of first byte = ADC value bits [11:8]
-            %   Second byte = ADC value bits [7:0]
             adc_msb = bitand(byte1, hex2dec('0F'));
             adc_value = bitshift(adc_msb, 8) + byte2;
-            fprintf("Sensor %d: ADC Value = %d\n", sensor_id, adc_value);
+
+            % Store into this cycle's data by sensor ID
+            if sensor_id >= 1 && sensor_id <= 4
+                cycleValues(sensor_id) = adc_value;
+            else
+                fprintf("Invalid sensor ID: %d\n", sensor_id);
+            end
         end
-    else
-        fprintf("No sensor response received.\n");
     end
-    
-    % Pause before sending the next ready command (adjust as needed)
-    pause(1);  
+
+    %% ---- Append cycle data to each sensor's vector ----
+    responses1(end+1) = cycleValues(1);
+    responses2(end+1) = cycleValues(2);
+    responses3(end+1) = cycleValues(3);
+    responses4(end+1) = cycleValues(4);
+
+    %% ---- Print cycle summary ----
+    fprintf("Cycle complete -> S1:%s  S2:%s  S3:%s  S4:%s\n", ...
+        num2str(cycleValues(1)), ...
+        num2str(cycleValues(2)), ...
+        num2str(cycleValues(3)), ...
+        num2str(cycleValues(4)));
+
+    pause(0.5);
 end
