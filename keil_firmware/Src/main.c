@@ -105,11 +105,8 @@ int main(void)
         // Process ADC values
         processADCValues();
         
-        // Construct the transmission frame 
-        constructXbeeFrame((uint16_t)Cplatedec1);
-        
         // Transmit the frame via UART.
-         HAL_UART_Transmit(&huart1, xbeeFrame, sizeof(xbeeFrame), HAL_MAX_DELAY);
+         HAL_UART_Transmit(&huart1, Cplatedec1, sizeof(Cplatedec1), HAL_MAX_DELAY);
          HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
       }
     }
@@ -335,13 +332,6 @@ void processADCValues(void)
     SRO = (V4 - V3) / 16;
     Cplatedec1 = KO / (33 * (SLO + SRO));
 }
-
-void constructXbeeFrame(uint16_t adcValue)
-{
-    xbeeFrame[0] = (sensorID << 4) | ((adcValue >> 8) & 0x0F);
-    xbeeFrame[1] = adcValue & 0xFF;
-}
-
 
 
 
