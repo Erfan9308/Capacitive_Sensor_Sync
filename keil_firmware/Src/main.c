@@ -37,7 +37,7 @@ UART_HandleTypeDef huart1;
 uint8_t sensorID = 0x01;  // <<< CHANGE THIS for each sensor accordingly
 
 uint8_t readyBuffer[2];  // Buffer for the "ready" signal from the receiver
-uint8_t xbeeFrame[2];    // Buffer for the XBee API frame
+uint8_t xbeeFrame[5];    // Buffer for the XBee API frame
 
 uint32_t adcVal[2000] = {0};
 int Ng = 243, Ns = 256, r = 2;
@@ -59,6 +59,7 @@ static void MX_TIM1_Init(void);
 static void MX_USART1_UART_Init(void);
 
 void processADCValues(void);
+void xbeeframe(void);
 
 /* USER CODE BEGIN 0 */
 void acquireADCBlock(void)
@@ -103,14 +104,17 @@ int main(void)
         acquireADCBlock();
         // Process ADC values
         processADCValues();
-        
+        xbeeframe();
         // Transmit the frame via UART.
-         HAL_UART_Transmit(&huart1, Cplatedec1, sizeof(Cplatedec1), HAL_MAX_DELAY);
+         HAL_UART_Transmit(&huart1, xbeeFrame, sizeof(xbeeFrame), HAL_MAX_DELAY);
          HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
       }
     }
   }
 }
+
+
+
 
 /* System Clock and Peripheral Initialization functions */
 void SystemClock_Config(void)
@@ -333,6 +337,17 @@ void processADCValues(void)
 }
 
 
+void xbeeframe(void){
+
+
+    xbeeFrame[0] = sensorID;
+
+    xbeeFrame[1] = (uint8_t)( val        & 0xFF);
+    xbeeFrame[2] = (uint8_t)((val >> 8 ) & 0xFF);
+    xbeeFrame[3] = (uint8_t)((val >> 16) & 0xFF);
+    xbeeFrame[4] = (uint8_t)((val >> 24) & 0xFF);
+ 
+}
 
 /* USER CODE END 4 */
 
