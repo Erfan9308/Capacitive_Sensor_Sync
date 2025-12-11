@@ -59,7 +59,6 @@ static void MX_TIM1_Init(void);
 static void MX_USART1_UART_Init(void);
 
 void processADCValues(void);
-void constructXbeeFrame(uint16_t data);
 
 /* USER CODE BEGIN 0 */
 void acquireADCBlock(void)
