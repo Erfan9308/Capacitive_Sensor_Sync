@@ -18,7 +18,7 @@ numSensors = 4;
 while true
     
     %% ---- SEND READY COMMAND ----
-    readyCmd = [hex2dec('A0') hex2dec('00')];
+    readyCmd = 'R';
     write(s, readyCmd, "uint8");
 
     %% ---- RECEIVE UP TO 4 FRAMES ----
@@ -38,13 +38,13 @@ while true
             byte1 = frame(1);
             byte2 = frame(2);
 
-            sensor_id = bitshift(byte1, -4);
-            adc_msb = bitand(byte1, hex2dec('0F'));
+            sensor_id = bitshift(byte1, -6);
+            adc_msb = bitand(byte1, hex2dec('3F'));
             adc_value = bitshift(adc_msb, 8) + byte2;
 
             % Store into this cycle's data by sensor ID
-            if sensor_id >= 1 && sensor_id <= 4
-                cycleValues(sensor_id) = adc_value;
+            if sensor_id >= 0 && sensor_id <= 3
+                cycleValues(sensor_id + 1) = adc_value;
             else
                 fprintf("Invalid sensor ID: %d\n", sensor_id);
             end

@@ -20,27 +20,7 @@
 #include "main.h"
 #include <string.h>
 #include <stdio.h>
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
@@ -50,7 +30,8 @@ TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
-/* USER CODE BEGIN PV */
+#define debugging 1
+
 #define XBEE_SLEEP_GPIO_PORT   GPIOB
 #define XBEE_SLEEP_PIN         GPIO_PIN_7
 
@@ -58,19 +39,15 @@ UART_HandleTypeDef huart2;
 #define SENSOR_ID_DELAY_MS 1000
 #define NR      1000
 #define FRAME   (2*NR)
-
-#define NR   1000
 #define NS   256
 #define NG   64
-#define FRAME (2*NR)
-
 #define ADC_FS 4095.0f
 #define VREF   3.300f
 
-// Put your frontend current here (Amps). Example: 40 nA = 40e-9
+//frontend current (Amps) 40 nA = 40e-9
 #define I_FRONTEND  (40e-9f)
 
-// TIM1 is 1 kHz in your config ? Tm = 1 ms
+// TIM1 is 1 kHz in config
 #define TM_SEC  (1.0f/1000.0f)
 volatile float Cp;
 volatile uint16_t adcBuf[FRAME];
@@ -94,37 +71,16 @@ static inline float avg_codes_u16(const uint16_t *buf, int start, int len);
 static inline float compute_cp_farad(const uint16_t *buf);
 /* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
+ 
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-	
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -132,38 +88,35 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-  MX_USART1_UART_Init();
-  MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
+
+	
+  #if debugging == 1
+	MX_USART2_UART_Init();
 	HAL_NVIC_SetPriority(USART2_IRQn,5, 0);
 	HAL_NVIC_EnableIRQ(USART2_IRQn);
+	const char *msg = "Boot\r\n";
+	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+	 #endif
+
+
+	MX_USART1_UART_Init();
 	HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
 	HAL_NVIC_EnableIRQ(USART1_IRQn);
 	
 	
-	
-	// (optional) quick hello
-const char *msg = "Boot\r\n";
-HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 
-// Start ADC DMA first (so it is armed and waiting for triggers), it will trigger by the tim2, then after 2000 catches( frame ) calls the adc callback.
+
 //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
 
-// Start TIM2 (this produces TRGO at 2MHz BUT it’s slaved, so it will wait for TIM1 trigger)
+
 //HAL_TIM_Base_Start(&htim2);
 
-// Start TIM1 output (PB1 = TIM1_CH3N)
+
 //HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 
-// If you also want TIM1 counter running (usually PWMN start does it, but safe):
+
 //HAL_TIM_Base_Start(&htim1);
 
-	while(1){
-	const char *msg = "a";
-		HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-		
-	}
 	
   /* USER CODE END 2 */
 
@@ -172,8 +125,9 @@ HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
   while (1)
   {
     /* USER CODE END WHILE */
-		
-//		HAL_UART_Receive(&huart2, &mssg, 1, HAL_MAX_DELAY);
+#if debugging == 1
+		HAL_UART_Receive(&huart2, &mssg, 1, HAL_MAX_DELAY);
+#endif
 		HAL_UART_Receive(&huart1, &mssg, 1, HAL_MAX_DELAY);		
 		if( mssg == 'R' || mssg =='r' ) {
 			adcFrameReady = 0;
@@ -182,15 +136,15 @@ HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 				MX_TIM2_Init();
 			HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
 			
-			// Start TIM2 (this produces TRGO at 2MHz BUT it’s slaved, so it will wait for TIM1 trigger)
+			// Start TIM2 (this produces TRGO at 2MHz BUT itâ€™s slaved, so it will wait for TIM1 trigger)
 			HAL_TIM_Base_Start(&htim2);
 			// Start TIM1 output (PB1 = TIM1_CH3N)
 			  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
 
-			// If you also want TIM1 counter running (usually PWMN start does it, but safe):
+		
 			  HAL_TIM_Base_Start(&htim1);
 		
-			while(!adcFrameReady)
+			while(!adcFrameReady);
 			
 			HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
 			HAL_TIM_Base_Stop(&htim1);
@@ -198,30 +152,37 @@ HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 			Cp = compute_cp_farad((const uint16_t*)adcBuf);
 
 			char line[80];
+			uint8_t line2[2];
 			if (Cp > 0)
 			{
 					// print in pF for convenience
 					float Cp_pf = Cp * 1e12f;
-			//	int n = snprintf(line, sizeof(line), "#%lu Cp=%.3f pF, sensor ID : %d \r\n",
-			//										 (unsigned long)frameCount, Cp_pf, SENSOR_ID);
-				int n = snprintf(line, sizeof(line), "Cp=%.3f pF, sensor ID : %d \r\n", Cp_pf, SENSOR_ID);
+					uint16_t final_cp = (uint16_t) ( Cp_pf * 10.0f);
+					if (final_cp > 16383) final_cp = 16383; // to ensure the first two msb are zero, so 2^14-1 = 16383
+					uint16_t combined = ((uint16_t)SENSOR_ID << 14 ) | final_cp;
+					line2[0] = (uint8_t)(combined >> 8); // firstbyte
+				  line2[1] = (uint8_t)(combined & 0xff); // secondbyte
+				
+				#if debugging == 1
+					int n = snprintf(line, sizeof(line), "Cp=%.3f pF, sensor ID : %d \r\n", Cp_pf, SENSOR_ID);
 					HAL_Delay(SENSOR_ID_DELAY_MS);
-				//	HAL_UART_Transmit(&huart2, (uint8_t*)line, n, HAL_MAX_DELAY);
-					HAL_UART_Transmit(&huart1, (uint8_t*)line, n, HAL_MAX_DELAY);				
+					HAL_UART_Transmit(&huart2, (uint8_t*)line, n, HAL_MAX_DELAY);
+				#endif
+					
+					HAL_UART_Transmit(&huart1, line2, 2, HAL_MAX_DELAY);				
 			}
 			else
 			{
-				//	int n = snprintf(line, sizeof(line), "#%lu Cp=ERR sensor ID : %d \r\n",
-				//									 (unsigned long)frameCount, SENSOR_ID);
-					int n = snprintf(line, sizeof(line), "Cp=ERR sensor ID : %d \r\n", SENSOR_ID);	
-				//HAL_UART_Transmit(&huart2, (uint8_t*)line, n, HAL_MAX_DELAY);
-				HAL_UART_Transmit(&huart1, (uint8_t*)line, n, HAL_MAX_DELAY);
+#if debugging == 1
+				int n = snprintf(line, sizeof(line), "Cp=ERR sensor ID : %d \r\n", SENSOR_ID);	
+				HAL_UART_Transmit(&huart2, (uint8_t*)line, n, HAL_MAX_DELAY);
+#endif
 			}
 				
-				//HAL_TIM_Base_Stop( &htim1);
+				HAL_TIM_Base_Stop( &htim1);
 					// Re-arm next frame (Normal DMA mode)
 				HAL_ADC_Stop_DMA(&hadc1); // probably to clear the flags then starting again, otherwise it doesnt work ... as it was not a circular dma ...
-				//HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
+				HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
 		}
     
   }
