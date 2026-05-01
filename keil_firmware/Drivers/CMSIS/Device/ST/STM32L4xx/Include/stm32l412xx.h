@@ -7,18 +7,17 @@
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheral's registers hardware
   *
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -45,11 +44,11 @@
 /**
   * @brief Configuration of the Cortex-M4 Processor and Core Peripherals
    */
-#define __CM4_REV                 0x0001  /*!< Cortex-M4 revision r0p1                       */
-#define __MPU_PRESENT             1       /*!< STM32L4XX provides an MPU                     */
-#define __NVIC_PRIO_BITS          4       /*!< STM32L4XX uses 4 Bits for the Priority Levels */
-#define __Vendor_SysTickConfig    0       /*!< Set to 1 if different SysTick Config is used  */
-#define __FPU_PRESENT             1       /*!< FPU present                                   */
+#define __CM4_REV                 0x0001U  /*!< Cortex-M4 revision r0p1                       */
+#define __MPU_PRESENT             1U       /*!< STM32L4XX provides an MPU                     */
+#define __NVIC_PRIO_BITS          4U       /*!< STM32L4XX uses 4 Bits for the Priority Levels */
+#define __Vendor_SysTickConfig    0U       /*!< Set to 1 if different SysTick Config is used  */
+#define __FPU_PRESENT             1U       /*!< FPU present                                   */
 
 /**
   * @}
@@ -718,21 +717,17 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;         /*!< USART Control register 1,                 Address offset: 0x00 */
-  __IO uint32_t CR2;         /*!< USART Control register 2,                 Address offset: 0x04 */
-  __IO uint32_t CR3;         /*!< USART Control register 3,                 Address offset: 0x08 */
-  __IO uint32_t BRR;         /*!< USART Baud rate register,                 Address offset: 0x0C */
-  __IO uint16_t GTPR;        /*!< USART Guard time and prescaler register,  Address offset: 0x10 */
-  uint16_t  RESERVED2;       /*!< Reserved, 0x12                                                 */
-  __IO uint32_t RTOR;        /*!< USART Receiver Time Out register,         Address offset: 0x14 */
-  __IO uint16_t RQR;         /*!< USART Request register,                   Address offset: 0x18 */
-  uint16_t  RESERVED3;       /*!< Reserved, 0x1A                                                 */
-  __IO uint32_t ISR;         /*!< USART Interrupt and status register,      Address offset: 0x1C */
-  __IO uint32_t ICR;         /*!< USART Interrupt flag Clear register,      Address offset: 0x20 */
-  __IO uint16_t RDR;         /*!< USART Receive Data register,              Address offset: 0x24 */
-  uint16_t  RESERVED4;       /*!< Reserved, 0x26                                                 */
-  __IO uint16_t TDR;         /*!< USART Transmit Data register,             Address offset: 0x28 */
-  uint16_t  RESERVED5;       /*!< Reserved, 0x2A                                                 */
+  __IO uint32_t CR1;         /*!< USART Control register 1,                    Address offset: 0x00 */
+  __IO uint32_t CR2;         /*!< USART Control register 2,                    Address offset: 0x04 */
+  __IO uint32_t CR3;         /*!< USART Control register 3,                    Address offset: 0x08 */
+  __IO uint32_t BRR;         /*!< USART Baud rate register,                    Address offset: 0x0C */
+  __IO uint32_t GTPR;        /*!< USART Guard time and prescaler register,     Address offset: 0x10 */
+  __IO uint32_t RTOR;        /*!< USART Receiver Time Out register,            Address offset: 0x14 */
+  __IO uint32_t RQR;         /*!< USART Request register,                      Address offset: 0x18 */
+  __IO uint32_t ISR;         /*!< USART Interrupt and status register,         Address offset: 0x1C */
+  __IO uint32_t ICR;         /*!< USART Interrupt flag Clear register,         Address offset: 0x20 */
+  __IO uint32_t RDR;         /*!< USART Receive Data register,                 Address offset: 0x24 */
+  __IO uint32_t TDR;         /*!< USART Transmit Data register,                Address offset: 0x28 */
 } USART_TypeDef;
 
 /**
@@ -822,7 +817,7 @@ typedef struct
 #define SRAM1_SIZE_MAX        (0x00008000UL) /*!< maximum SRAM1 size (up to 32 KBytes) */
 #define SRAM2_SIZE            (0x00002000UL) /*!< SRAM2 size (8 KBytes) */
 
-#define FLASH_SIZE_DATA_REGISTER ((uint32_t)0x1FFF75E0)
+#define FLASH_SIZE_DATA_REGISTER (0x1FFF75E0UL)
 
 #define FLASH_SIZE               (((((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0000FFFFU)) == 0x0000FFFFU)) ? (0x80U << 10U) :  \
                                   (((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0000FFFFU)) << 10U))
@@ -1011,6 +1006,15 @@ typedef struct
   * @{
   */
 
+/** @addtogroup Hardware_Constant_Definition
+  * @{
+  */
+#define LSI_STARTUP_TIME 130U /*!< LSI Maximum startup time in us */
+
+/**
+  * @}
+  */
+
 /** @addtogroup Peripheral_Registers_Bits_Definition
   * @{
   */
@@ -1026,7 +1030,7 @@ typedef struct
 /******************************************************************************/
 
 /*
- * @brief Specific device feature definitions (not present on all devices in the STM32L4 serie)
+ * @brief Specific device feature definitions (not present on all devices in the STM32L4 series)
  */
 #define ADC_MULTIMODE_SUPPORT                          /*!< ADC feature available only on specific devices: multimode available on devices with several ADC instances */
 
@@ -1161,7 +1165,7 @@ typedef struct
 
 #define ADC_CFGR_ALIGN_Pos             (5U)
 #define ADC_CFGR_ALIGN_Msk             (0x1UL << ADC_CFGR_ALIGN_Pos)           /*!< 0x00000020 */
-#define ADC_CFGR_ALIGN                 ADC_CFGR_ALIGN_Msk                      /*!< ADC data alignement */
+#define ADC_CFGR_ALIGN                 ADC_CFGR_ALIGN_Msk                      /*!< ADC data alignment */
 
 #define ADC_CFGR_EXTSEL_Pos            (6U)
 #define ADC_CFGR_EXTSEL_Msk            (0xFUL << ADC_CFGR_EXTSEL_Pos)          /*!< 0x000003C0 */
@@ -2251,7 +2255,14 @@ typedef struct
 #define CRS_CR_SWSYNC             CRS_CR_SWSYNC_Msk                            /*!< Generate software SYNC event */
 #define CRS_CR_TRIM_Pos           (8U)
 #define CRS_CR_TRIM_Msk           (0x7FUL << CRS_CR_TRIM_Pos)                  /*!< 0x00007F00 */
-#define CRS_CR_TRIM               CRS_CR_TRIM_Msk                              /*!< HSI48 oscillator smooth trimming */
+#define CRS_CR_TRIM               CRS_CR_TRIM_Msk                              /*!< TRIM[6:0] HSI48 oscillator smooth trimming */
+#define CRS_CR_TRIM_0             (0x01UL << CRS_CR_TRIM_Pos)                  /*!< 0x00000100 */
+#define CRS_CR_TRIM_1             (0x02UL << CRS_CR_TRIM_Pos)                  /*!< 0x00000200 */
+#define CRS_CR_TRIM_2             (0x04UL << CRS_CR_TRIM_Pos)                  /*!< 0x00000400 */
+#define CRS_CR_TRIM_3             (0x08UL << CRS_CR_TRIM_Pos)                  /*!< 0x00000800 */
+#define CRS_CR_TRIM_4             (0x10UL << CRS_CR_TRIM_Pos)                  /*!< 0x00001000 */
+#define CRS_CR_TRIM_5             (0x20UL << CRS_CR_TRIM_Pos)                  /*!< 0x00002000 */
+#define CRS_CR_TRIM_6             (0x40UL << CRS_CR_TRIM_Pos)                  /*!< 0x00004000 */
 
 /*******************  Bit definition for CRS_CFGR register  *********************/
 #define CRS_CFGR_RELOAD_Pos       (0U)
@@ -5370,7 +5381,7 @@ typedef struct
 /*                                                                            */
 /******************************************************************************/
 /*
-* @brief Specific device feature definitions  (not present on all devices in the STM32L4 serie)
+* @brief Specific device feature definitions  (not present on all devices in the STM32L4 series)
 */
 #define RCC_HSI48_SUPPORT
 
@@ -8380,7 +8391,7 @@ typedef struct
 
 /*******************  Bit definition for TIM_CCR5 register  *******************/
 #define TIM_CCR5_CCR5_Pos         (0U)
-#define TIM_CCR5_CCR5_Msk         (0xFFFFFFFFUL << TIM_CCR5_CCR5_Pos)          /*!< 0xFFFFFFFF */
+#define TIM_CCR5_CCR5_Msk         (0xFFFFUL << TIM_CCR5_CCR5_Pos)              /*!< 0x0000FFFF */
 #define TIM_CCR5_CCR5             TIM_CCR5_CCR5_Msk                            /*!<Capture/Compare 5 Value */
 #define TIM_CCR5_GC5C1_Pos        (29U)
 #define TIM_CCR5_GC5C1_Msk        (0x1UL << TIM_CCR5_GC5C1_Pos)                /*!< 0x20000000 */
@@ -9325,7 +9336,7 @@ typedef struct
 /******************************************************************************/
 
 /*
-* @brief Specific device feature definitions (not present on all devices in the STM32L4 serie)
+* @brief Specific device feature definitions (not present on all devices in the STM32L4 series)
 */
 #define USART_TCBGT_SUPPORT
 
@@ -10903,4 +10914,3 @@ typedef struct
   * @}
   */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

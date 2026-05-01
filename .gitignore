@@ -1,0 +1,62 @@
+# ============================================
+# STM32 / Keil µVision .gitignore
+# ============================================
+
+# ----- Keil MDK-ARM build output -----
+# Object files, listings, linker output
+*.o
+*.d
+*.dep
+*.axf
+*.hex
+*.bin
+*.elf
+*.map
+*.htm
+*.lnp
+*.iex
+*.sct
+*.lst
+*.crf
+*.i
+*.s_
+
+# Build output directories
+**/MDK-ARM/**/Objects/
+**/MDK-ARM/**/Listings/
+**/MDK-ARM/mihai_code1/
+
+# ----- Keil user-specific / GUI layout files -----
+*.uvguix.*
+*.bak
+*.dbgconf
+
+# DebugConfig folder (session-specific)
+**/MDK-ARM/DebugConfig/
+
+# RTE (Run-Time Environment) cache
+**/MDK-ARM/RTE/_*/
+
+# Event Recorder stub (auto-generated)
+**/MDK-ARM/EventRecorderStub.scvd
+
+# ----- STM32CubeMX -----
+# MXProject file (user-specific paths & IDE settings)
+.mxproject
+
+# ----- IDE / Editor files -----
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.code-workspace
+
+# ----- OS generated files -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- MATLAB generated files -----
+*.asv
+*.m~
