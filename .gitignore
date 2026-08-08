@@ -60,3 +60,65 @@ desktop.ini
 # ----- MATLAB generated files -----
 *.asv
 *.m~
+*.mat
+
+# ============================================
+# Vendor drivers (STM32CubeMX output)
+# --------------------------------------------
+# CubeMX copies the whole HAL + CMSIS tree (~97 MB) but this project only
+# compiles a small subset. Track what the Keil build actually needs and
+# ignore the rest. To re-enable something, add a "!" negation line and add
+# the file to the Keil project's file list.
+# ============================================
+
+# ----- CMSIS: drop everything, then re-add what is on the include path -----
+keil_firmware/Drivers/CMSIS/**
+!keil_firmware/Drivers/CMSIS/LICENSE.txt
+
+# Cortex core headers (compiler include path: ../Drivers/CMSIS/Include)
+!keil_firmware/Drivers/CMSIS/Include/
+!keil_firmware/Drivers/CMSIS/Include/**
+
+# Device headers (include path: ../Drivers/CMSIS/Device/ST/STM32L4xx/Include)
+# Only the STM32L412 target is ever compiled.
+!keil_firmware/Drivers/CMSIS/Device/
+!keil_firmware/Drivers/CMSIS/Device/ST/
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/License.md
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/LICENSE.txt
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/Include/
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l412xx.h
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l4xx.h
+!keil_firmware/Drivers/CMSIS/Device/ST/STM32L4xx/Include/system_stm32l4xx.h
+
+# Not re-added above, and therefore ignored:
+#   CMSIS/Core, CMSIS/DSP, CMSIS/NN, CMSIS/RTOS, CMSIS/RTOS2, CMSIS/docs,
+#   CMSIS/Device/ST/STM32L4xx/Source/Templates  (startup lives in
+#   MDK-ARM/startup_stm32l412xx.s), and the 24 other STM32L4 device headers.
+
+# ----- STM32L4xx HAL driver: sources -----
+# Inc/ and Inc/Legacy/ are kept in full: HAL headers cross-include each other
+# and are gated by HAL_*_MODULE_ENABLED in Core/Inc/stm32l4xx_hal_conf.h.
+# Src/ is trimmed to the 20 files listed in mihai_code1.uvprojx.
+keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/**
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c
+!keil_firmware/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c

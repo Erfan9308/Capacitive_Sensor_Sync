@@ -30,30 +30,44 @@ TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
-#define debugging 1
+#define DEBUG_UART_ENABLED       0U
 
-#define XBEE_SLEEP_GPIO_PORT   GPIOB
-#define XBEE_SLEEP_PIN         GPIO_PIN_7
+#define XBEE_SLEEP_GPIO_PORT     GPIOB
+#define XBEE_SLEEP_PIN           GPIO_PIN_7
 
-#define SENSOR_ID 1
-#define SENSOR_ID_DELAY_MS 1000
-#define NR      1000
-#define FRAME   (2*NR)
-#define NS   256
-#define NG   64
-#define ADC_FS 4095.0f
-#define VREF   3.300f
+/*
+ * The upper two response bits contain the sensor ID, so valid IDs are 0..3.
+ * Each node uses a separate response slot after the broadcast request.
+ */
+#define SENSOR_ID                1U
+#define RESPONSE_SLOT_MS         10U
 
-//frontend current (Amps) 40 nA = 40e-9
-#define I_FRONTEND  (40e-9f)
+#define NR                       1000U
+#define FRAME                    (2U * NR)
+#define NS                       256U
+#define NG                       64U
 
-// TIM1 is 1 kHz in config
-#define TM_SEC  (1.0f/1000.0f)
-volatile float Cp;
-volatile uint16_t adcBuf[FRAME];
-volatile uint8_t adcFrameReady = 0;
-volatile uint32_t frameCount = 0;
- uint8_t mssg;
+#define ADC_FS                   4095.0f
+#define VREF                     3.300f
+#define I_FRONTEND               40e-9f
+#define TM_SEC                   1.0e-3f
+
+#define ADC_FRAME_TIMEOUT_MS     20U
+#define CAP_SCALE_PER_PF         10.0f
+#define CAP_PAYLOAD_MAX          0x3FFEU
+#define CAP_PAYLOAD_ERROR        0x3FFFU
+
+#if SENSOR_ID > 3U
+#error "SENSOR_ID must fit in two bits (0..3)."
+#endif
+
+#if ((2U * NG + NS) >= NR)
+#error "NR, NS and NG do not define valid slope-measurement segments."
+#endif
+
+static volatile uint16_t adcBuf[FRAME];
+static volatile uint8_t adcFrameReady = 0U;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,193 +79,363 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
+
 /* USER CODE BEGIN PFP */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc);
-static inline float avg_codes_u16(const uint16_t *buf, int start, int len);
-static inline float compute_cp_farad(const uint16_t *buf);
+
+static float avg_codes_u16(const volatile uint16_t *buf,
+                           uint32_t start,
+                           uint32_t len);
+static float compute_cp_farad(const volatile uint16_t *buf);
+static HAL_StatusTypeDef acquire_adc_frame(void);
+static void stop_acquisition(void);
+static uint16_t pack_measurement(float cp_farad, uint8_t valid);
+static void debug_report(float cp_farad,
+                         uint8_t valid,
+                         HAL_StatusTypeDef acquisition_status);
 /* USER CODE END PFP */
 
 int main(void)
 {
+  uint8_t request_byte = 0U;
 
- 
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* Configure the system clock */
   SystemClock_Config();
 
-  /* Initialize all configured peripherals */
+  /*
+   * Peripherals are configured once. They are started and stopped for each
+   * measurement, but their MX_* initialization functions are not called again.
+   */
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_USART1_UART_Init();
 
-	
-  #if debugging == 1
-	MX_USART2_UART_Init();
-	HAL_NVIC_SetPriority(USART2_IRQn,5, 0);
-	HAL_NVIC_EnableIRQ(USART2_IRQn);
-	const char *msg = "Boot\r\n";
-	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-	 #endif
+#if DEBUG_UART_ENABLED
+  MX_USART2_UART_Init();
+#endif
 
+  /* Low means "awake" if XBee pin-sleep mode is ever enabled. */
+  HAL_GPIO_WritePin(XBEE_SLEEP_GPIO_PORT,
+                    XBEE_SLEEP_PIN,
+                    GPIO_PIN_RESET);
 
-	MX_USART1_UART_Init();
-	HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
-	HAL_NVIC_EnableIRQ(USART1_IRQn);
-	
-	
+  /* Run the ADC self-calibration once, while the ADC is idle. */
+  if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
+#if DEBUG_UART_ENABLED
+  {
+    static const char boot_message[] =
+        "Boot: waiting for XBee request 'r' or 'R'.\r\n";
 
-//HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
+    (void)HAL_UART_Transmit(&huart2,
+                            (uint8_t *)boot_message,
+                            (uint16_t)(sizeof(boot_message) - 1U),
+                            100U);
+  }
+#endif
 
-
-//HAL_TIM_Base_Start(&htim2);
-
-
-//HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
-
-
-//HAL_TIM_Base_Start(&htim1);
-
-	
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-#if debugging == 1
-		HAL_UART_Receive(&huart2, &mssg, 1, HAL_MAX_DELAY);
-#endif
-		HAL_UART_Receive(&huart1, &mssg, 1, HAL_MAX_DELAY);		
-		if( mssg == 'R' || mssg =='r' ) {
-			adcFrameReady = 0;
-			  MX_DMA_Init();
-				MX_TIM1_Init();
-				MX_TIM2_Init();
-			HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
-			
-			// Start TIM2 (this produces TRGO at 2MHz BUT it’s slaved, so it will wait for TIM1 trigger)
-			HAL_TIM_Base_Start(&htim2);
-			// Start TIM1 output (PB1 = TIM1_CH3N)
-			  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+    HAL_StatusTypeDef uart_status;
 
-		
-			  HAL_TIM_Base_Start(&htim1);
-		
-			while(!adcFrameReady);
-			
-			HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
-			HAL_TIM_Base_Stop(&htim1);
-			HAL_TIM_Base_Stop(&htim2);
-			Cp = compute_cp_farad((const uint16_t*)adcBuf);
+    /*
+     * The sensor node is event driven: it sleeps logically here until the
+     * central XBee broadcasts one request byte.
+     */
+    uart_status = HAL_UART_Receive(&huart1,
+                                   &request_byte,
+                                   1U,
+                                   HAL_MAX_DELAY);
 
-			char line[80];
-			uint8_t line2[2];
-			if (Cp > 0)
-			{
-					// print in pF for convenience
-					float Cp_pf = Cp * 1e12f;
-					uint16_t final_cp = (uint16_t) ( Cp_pf * 10.0f);
-					if (final_cp > 16383) final_cp = 16383; // to ensure the first two msb are zero, so 2^14-1 = 16383
-					uint16_t combined = ((uint16_t)SENSOR_ID << 14 ) | final_cp;
-					line2[0] = (uint8_t)(combined >> 8); // firstbyte
-				  line2[1] = (uint8_t)(combined & 0xff); // secondbyte
-				
-				#if debugging == 1
-					int n = snprintf(line, sizeof(line), "Cp=%.3f pF, sensor ID : %d \r\n", Cp_pf, SENSOR_ID);
-					HAL_Delay(SENSOR_ID_DELAY_MS);
-					HAL_UART_Transmit(&huart2, (uint8_t*)line, n, HAL_MAX_DELAY);
-				#endif
-					
-					HAL_UART_Transmit(&huart1, line2, 2, HAL_MAX_DELAY);				
-			}
-			else
-			{
-#if debugging == 1
-				int n = snprintf(line, sizeof(line), "Cp=ERR sensor ID : %d \r\n", SENSOR_ID);	
-				HAL_UART_Transmit(&huart2, (uint8_t*)line, n, HAL_MAX_DELAY);
+    if (uart_status != HAL_OK)
+    {
+#if DEBUG_UART_ENABLED
+      static const char uart_error_message[] =
+          "USART1 receive error; re-arming receiver.\r\n";
+
+      (void)HAL_UART_Transmit(&huart2,
+                              (uint8_t *)uart_error_message,
+                              (uint16_t)(sizeof(uart_error_message) - 1U),
+                              100U);
 #endif
-			}
-				
-				HAL_TIM_Base_Stop( &htim1);
-					// Re-arm next frame (Normal DMA mode)
-				HAL_ADC_Stop_DMA(&hadc1); // probably to clear the flags then starting again, otherwise it doesnt work ... as it was not a circular dma ...
-				HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, FRAME);
-		}
-    
+      (void)HAL_UART_AbortReceive(&huart1);
+      continue;
+    }
+
+    if ((request_byte == (uint8_t)'r') ||
+        (request_byte == (uint8_t)'R'))
+    {
+      HAL_StatusTypeDef acquisition_status;
+      float cp_farad = -1.0f;
+      uint8_t valid = 0U;
+      uint16_t packed;
+      uint8_t response[2];
+
+      acquisition_status = acquire_adc_frame();
+
+      if (acquisition_status == HAL_OK)
+      {
+        cp_farad = compute_cp_farad(adcBuf);
+        valid = (cp_farad > 0.0f) ? 1U : 0U;
+      }
+
+      /*
+       * Broadcast requests reach every node at almost the same time.
+       * Give each sensor ID a different response slot to reduce collisions.
+       */
+      HAL_Delay((uint32_t)SENSOR_ID * RESPONSE_SLOT_MS);
+
+      packed = pack_measurement(cp_farad, valid);
+      response[0] = (uint8_t)(packed >> 8);
+      response[1] = (uint8_t)(packed & 0xFFU);
+
+      (void)HAL_UART_Transmit(&huart1,
+                              response,
+                              (uint16_t)sizeof(response),
+                              100U);
+
+      debug_report(cp_farad, valid, acquisition_status);
+    }
   }
-  
 }
 
 
 /**************************************************************************************/
+/* Application functions                                                            */
 /**************************************************************************************/
-/**************************************************************************************/
-/**************************************************************************************/
-/*FUNCTIONS : */
-static inline float compute_cp_farad(const uint16_t *buf)
+
+static HAL_StatusTypeDef acquire_adc_frame(void)
 {
-    // Segment starts
-    const int s1 = NG;
-    const int s2 = NR - NG - NS;
-    const int off = NR;
-    const int s3 = off + NG;
-    const int s4 = off + (NR - NG - NS);
+  HAL_StatusTypeDef status;
+  uint32_t start_tick;
 
-    // Averages (ADC codes)
-    float A1c = avg_codes_u16(buf, s1, NS);
-    float A2c = avg_codes_u16(buf, s2, NS);
-    float A3c = avg_codes_u16(buf, s3, NS);
-    float A4c = avg_codes_u16(buf, s4, NS);
+  adcFrameReady = 0U;
 
-    // Convert averages to volts
-    float A1 = A1c * (VREF / ADC_FS);
-    float A2 = A2c * (VREF / ADC_FS);
-    float A3 = A3c * (VREF / ADC_FS);
-    float A4 = A4c * (VREF / ADC_FS);
+  /* Begin every one-shot acquisition from a known timer phase. */
+  __HAL_TIM_SET_COUNTER(&htim1, 0U);
+  __HAL_TIM_SET_COUNTER(&htim2, 0U);
+  __HAL_TIM_CLEAR_FLAG(&htim1, TIM_FLAG_UPDATE);
+  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
 
-    // Ramp deltas
-    float dVf = (A2 - A1); // first ramp
-    float dVr = (A4 - A3); // second ramp
+  /*
+   * Start order:
+   * 1. Arm ADC + normal-mode DMA for FRAME samples.
+   * 2. Arm TIM2, which generates the 2 MHz ADC trigger.
+   * 3. Start TIM1 CH3N; this produces the 1 kHz excitation waveform and
+   *    synchronizes TIM2 through TIM1 TRGO.
+   */
+  status = HAL_ADC_Start_DMA(&hadc1,
+                             (uint32_t *)adcBuf,
+                             FRAME);
+  if (status != HAL_OK)
+  {
+    stop_acquisition();
+    return status;
+  }
 
-    // Denominator of Eq.28
-    float denom = (dVr - dVf);
+  status = HAL_TIM_Base_Start(&htim2);
+  if (status != HAL_OK)
+  {
+    stop_acquisition();
+    return status;
+  }
 
-    // Protect against divide-by-zero / bad frames
-    if (denom > -1e-6f && denom < 1e-6f) return -1.0f;
+  /*
+   * HAL_TIMEx_PWMN_Start() enables the complementary PWM output and starts
+   * TIM1. A second HAL_TIM_Base_Start(&htim1) is unnecessary.
+   */
+  status = HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+  if (status != HAL_OK)
+  {
+    stop_acquisition();
+    return status;
+  }
 
-    float k = (float)(NR - 2*NG - NS) / (float)NR;
+  start_tick = HAL_GetTick();
 
-    float Cp = (I_FRONTEND * TM_SEC / denom) * k;
+  while (adcFrameReady == 0U)
+  {
+    if ((HAL_GetTick() - start_tick) >= ADC_FRAME_TIMEOUT_MS)
+    {
+      stop_acquisition();
+      return HAL_TIMEOUT;
+    }
+  }
 
-    // Cp should be positive. Polarity can flip depending on CH3N inversion.
-    if (Cp < 0) Cp = -Cp;
-
-    return Cp;
+  stop_acquisition();
+  return HAL_OK;
 }
 
 
-
-static inline float avg_codes_u16(const uint16_t *buf, int start, int len)
+static void stop_acquisition(void)
 {
-    uint32_t s = 0;
-    for (int i = 0; i < len; i++) s += buf[start + i];
-    return (float)s / (float)len; // average in ADC codes
+  /*
+   * These calls also restore the HAL peripheral state so the next normal-mode
+   * DMA acquisition can be started cleanly.
+   */
+  (void)HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_3);
+  (void)HAL_TIM_Base_Stop(&htim2);
+  (void)HAL_ADC_Stop_DMA(&hadc1);
 }
+
+
+static uint16_t pack_measurement(float cp_farad, uint8_t valid)
+{
+  uint16_t payload;
+
+  if (valid != 0U)
+  {
+    float scaled = cp_farad * 1.0e12f * CAP_SCALE_PER_PF;
+
+    if (scaled < 0.0f)
+    {
+      payload = 0U;
+    }
+    else if (scaled >= (float)CAP_PAYLOAD_MAX)
+    {
+      payload = CAP_PAYLOAD_MAX;
+    }
+    else
+    {
+      /* Round to the nearest 0.1 pF instead of always truncating. */
+      payload = (uint16_t)(scaled + 0.5f);
+    }
+  }
+  else
+  {
+    /*
+     * 0x3FFF is reserved as an error payload. Valid measurements are capped
+     * at 0x3FFE, so the central receiver always gets a response.
+     */
+    payload = CAP_PAYLOAD_ERROR;
+  }
+
+  return (uint16_t)((((uint16_t)SENSOR_ID & 0x0003U) << 14) |
+                    (payload & 0x3FFFU));
+}
+
+
+static float compute_cp_farad(const volatile uint16_t *buf)
+{
+  const uint32_t s1 = NG;
+  const uint32_t s2 = NR - NG - NS;
+  const uint32_t off = NR;
+  const uint32_t s3 = off + NG;
+  const uint32_t s4 = off + NR - NG - NS;
+
+  float a1_codes = avg_codes_u16(buf, s1, NS);
+  float a2_codes = avg_codes_u16(buf, s2, NS);
+  float a3_codes = avg_codes_u16(buf, s3, NS);
+  float a4_codes = avg_codes_u16(buf, s4, NS);
+
+  float a1 = a1_codes * (VREF / ADC_FS);
+  float a2 = a2_codes * (VREF / ADC_FS);
+  float a3 = a3_codes * (VREF / ADC_FS);
+  float a4 = a4_codes * (VREF / ADC_FS);
+
+  float falling_delta = a2 - a1;
+  float rising_delta = a4 - a3;
+  float denominator = rising_delta - falling_delta;
+  float segment_factor;
+  float cp_farad;
+
+  if ((denominator > -1.0e-6f) && (denominator < 1.0e-6f))
+  {
+    return -1.0f;
+  }
+
+  segment_factor =
+      (float)(NR - (2U * NG) - NS) / (float)NR;
+
+  cp_farad =
+      (I_FRONTEND * TM_SEC / denominator) * segment_factor;
+
+  /*
+   * The result sign depends on the physical CH3N polarity. Capacitance itself
+   * must be positive.
+   */
+  if (cp_farad < 0.0f)
+  {
+    cp_farad = -cp_farad;
+  }
+
+  return cp_farad;
+}
+
+
+static float avg_codes_u16(const volatile uint16_t *buf,
+                           uint32_t start,
+                           uint32_t len)
+{
+  uint32_t sum = 0U;
+  uint32_t i;
+
+  for (i = 0U; i < len; ++i)
+  {
+    sum += buf[start + i];
+  }
+
+  return (float)sum / (float)len;
+}
+
+
+static void debug_report(float cp_farad,
+                         uint8_t valid,
+                         HAL_StatusTypeDef acquisition_status)
+{
+#if DEBUG_UART_ENABLED
+  char line[112];
+  int length;
+
+  if (valid != 0U)
+  {
+    length = snprintf(line,
+                      sizeof(line),
+                      "Cp=%.3f pF, sensor ID=%u\r\n",
+                      (double)(cp_farad * 1.0e12f),
+                      (unsigned int)SENSOR_ID);
+  }
+  else
+  {
+    length = snprintf(line,
+                      sizeof(line),
+                      "Cp=ERROR, sensor ID=%u, acquisition status=%d\r\n",
+                      (unsigned int)SENSOR_ID,
+                      (int)acquisition_status);
+  }
+
+  if (length > 0)
+  {
+    uint16_t tx_length =
+        (length < (int)sizeof(line)) ?
+        (uint16_t)length :
+        (uint16_t)(sizeof(line) - 1U);
+
+    (void)HAL_UART_Transmit(&huart2,
+                            (uint8_t *)line,
+                            tx_length,
+                            100U);
+  }
+#else
+  (void)cp_farad;
+  (void)valid;
+  (void)acquisition_status;
+#endif
+}
+
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-    if (hadc->Instance == ADC1)
-    {
-        //frameCount++;
-			adcFrameReady = 1;
-    }
+  if (hadc->Instance == ADC1)
+  {
+    adcFrameReady = 1U;
+  }
 }
 
 
@@ -596,25 +780,25 @@ static void MX_DMA_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* Configure XBee ON/SLEEP pin as output */
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-  HAL_GPIO_WritePin(XBEE_SLEEP_GPIO_PORT, XBEE_SLEEP_PIN, GPIO_PIN_SET);
+  /*
+   * Set the output latch low before changing PB7 to output mode. This avoids
+   * a possible high pulse on XBee SLEEP_RQ during startup.
+   */
+  HAL_GPIO_WritePin(XBEE_SLEEP_GPIO_PORT,
+                    XBEE_SLEEP_PIN,
+                    GPIO_PIN_RESET);
 
   GPIO_InitStruct.Pin = XBEE_SLEEP_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(XBEE_SLEEP_GPIO_PORT, &GPIO_InitStruct);
-  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
