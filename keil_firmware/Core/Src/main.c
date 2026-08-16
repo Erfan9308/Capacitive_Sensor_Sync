@@ -95,9 +95,10 @@ static void debug_report(float cp_farad,
                          HAL_StatusTypeDef acquisition_status);
 /* USER CODE END PFP */
 
+uint8_t request_byte = 0U;
 int main(void)
 {
-  uint8_t request_byte = 0U;
+  // uint8_t request_byte = 0U;
 
   HAL_Init();
   SystemClock_Config();
@@ -148,13 +149,22 @@ int main(void)
      * The sensor node is event driven: it sleeps logically here until the
      * central XBee broadcasts one request byte.
      */
+#if DEBUG_UART_ENABLED
+
+    uart_status = HAL_UART_Receive(&huart2,
+                                   &request_byte,
+                                   1U,
+                                   HAL_MAX_DELAY);
+#else
     uart_status = HAL_UART_Receive(&huart1,
                                    &request_byte,
                                    1U,
                                    HAL_MAX_DELAY);
-
+#endif
+		
     if (uart_status != HAL_OK)
     {
+			
 #if DEBUG_UART_ENABLED
       static const char uart_error_message[] =
           "USART1 receive error; re-arming receiver.\r\n";
@@ -195,12 +205,16 @@ int main(void)
       response[0] = (uint8_t)(packed >> 8);
       response[1] = (uint8_t)(packed & 0xFFU);
 
-      (void)HAL_UART_Transmit(&huart1,
+#if DEBUG_UART_ENABLED
+
+			debug_report(cp_farad, valid, acquisition_status);
+#else			
+      HAL_UART_Transmit(&huart1,
                               response,
                               (uint16_t)sizeof(response),
                               100U);
-
-      debug_report(cp_farad, valid, acquisition_status);
+#endif
+      
     }
   }
 }
@@ -389,7 +403,7 @@ static void debug_report(float cp_farad,
                          uint8_t valid,
                          HAL_StatusTypeDef acquisition_status)
 {
-#if DEBUG_UART_ENABLED
+
   char line[112];
   int length;
 
@@ -422,11 +436,11 @@ static void debug_report(float cp_farad,
                             tx_length,
                             100U);
   }
-#else
+
   (void)cp_farad;
   (void)valid;
   (void)acquisition_status;
-#endif
+
 }
 
 
