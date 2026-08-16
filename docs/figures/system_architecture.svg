@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="272" viewBox="0 0 680 272" role="img">
+<title>System architecture</title>
+<desc>A MATLAB server on a PC drives a Waspmote gateway holding the coordinator XBee, which broadcasts over 802.15.4 to four STM32 sensor nodes.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.th{font-size:14px;font-weight:500}.ts{font-size:12px}
+.p-b{fill:#FBEFFF;stroke:#C297FF;stroke-width:1.2}
+.p-t{fill:#512A97}.p-s{fill:#8250DF}
+.a-b{fill:#FFF8C5;stroke:#D4A72C;stroke-width:1.2}
+.a-t{fill:#7D4E00}.a-s{fill:#9A6700}
+.b-b{fill:#DDF4FF;stroke:#54AEFF;stroke-width:1.2}
+.b-t{fill:#0A3069}.b-s{fill:#0969DA}
+.mut{fill:#59636E}
+.ln{stroke:#59636E;stroke-width:1.6;fill:none}
+.ah{fill:none;stroke:#59636E;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-color-scheme:dark){
+.p-b{fill:#211047;stroke:#8957E5}.p-t{fill:#D2A8FF}.p-s{fill:#B689F7}
+.a-b{fill:#2B2412;stroke:#9E6A03}.a-t{fill:#F0C674}.a-s{fill:#D9A441}
+.b-b{fill:#121D2F;stroke:#1F6FEB}.b-t{fill:#A5D6FF}.b-s{fill:#79C0FF}
+.mut{fill:#9198A1}.ln,.ah{stroke:#9198A1}
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ah" d="M2 1L8 5L2 9"/></marker></defs>
+
+<rect class="p-b" x="40" y="118" width="150" height="52" rx="5"/>
+<text class="th p-t" x="115" y="140" text-anchor="middle">matlab server</text>
+<text class="ts p-s" x="115" y="157" text-anchor="middle">server.m on pc</text>
+
+<line class="ln" x1="190" y1="144" x2="242" y2="144" marker-end="url(#a)"/>
+<text class="ts mut" x="216" y="136" text-anchor="middle">usb</text>
+
+<rect class="a-b" x="246" y="118" width="175" height="52" rx="5"/>
+<text class="th a-t" x="333" y="140" text-anchor="middle">waspmote gateway</text>
+<text class="ts a-s" x="333" y="157" text-anchor="middle">holds coordinator xbee</text>
+
+<text class="ts mut" x="333" y="192" text-anchor="middle">802.15.4 broadcast</text>
+
+<path class="ln" d="M421 144 C447 144 452 62 471 62" marker-end="url(#a)"/>
+<path class="ln" d="M421 144 C447 144 452 116 471 116" marker-end="url(#a)"/>
+<path class="ln" d="M421 144 C447 144 452 172 471 172" marker-end="url(#a)"/>
+<path class="ln" d="M421 144 C447 144 452 226 471 226" marker-end="url(#a)"/>
+
+<rect class="b-b" x="477" y="40" width="150" height="44" rx="5"/>
+<text class="th b-t" x="552" y="59" text-anchor="middle">sensor node 0</text>
+<text class="ts b-s" x="552" y="75" text-anchor="middle">stm32l412 + xbee</text>
+
+<rect class="b-b" x="477" y="94" width="150" height="44" rx="5"/>
+<text class="th b-t" x="552" y="113" text-anchor="middle">sensor node 1</text>
+<text class="ts b-s" x="552" y="129" text-anchor="middle">stm32l412 + xbee</text>
+
+<rect class="b-b" x="477" y="150" width="150" height="44" rx="5"/>
+<text class="th b-t" x="552" y="169" text-anchor="middle">sensor node 2</text>
+<text class="ts b-s" x="552" y="185" text-anchor="middle">stm32l412 + xbee</text>
+
+<rect class="b-b" x="477" y="204" width="150" height="44" rx="5"/>
+<text class="th b-t" x="552" y="223" text-anchor="middle">sensor node 3</text>
+<text class="ts b-s" x="552" y="239" text-anchor="middle">stm32l412 + xbee</text>
+</svg>

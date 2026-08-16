@@ -62,6 +62,20 @@ desktop.ini
 *.m~
 *.mat
 
+# ----- LaTeX build artefacts (docs/) -----
+# The built configuration_reference.pdf IS tracked; only the by-products
+# of running latexmk are ignored.
+*.aux
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.tmp
+docs/*.log
+
 # ============================================
 # Vendor drivers (STM32CubeMX output)
 # --------------------------------------------

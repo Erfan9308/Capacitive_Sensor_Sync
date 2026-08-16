@@ -1,0 +1,821 @@
+% ---------------------------------------------------------------
+%  Capacitive Sensor Sync - Configuration and Design Reference
+%
+%  Compiles as-is on Overleaf (pdfLaTeX) and locally:
+%      latexmk -pdf configuration_reference.tex
+%
+%  Figures live in figures/ as PDF. Photographs go in
+%  figures/photos/ using the filenames in the \photofig calls;
+%  until they exist a labelled placeholder box is drawn instead.
+% ---------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage{tabularray}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\UseTblrLibrary{booktabs}
+\tcbuselibrary{skins,breakable}
+
+% ---------------- greyscale palette ----------------
+% The document itself is monochrome; only the figures carry colour.
+\definecolor{ink}{HTML}{000000}
+\definecolor{hdrbg}{HTML}{E8E8E8}
+\definecolor{rulec}{HTML}{9A9A9A}
+\definecolor{muted}{HTML}{555555}
+\definecolor{codebg}{HTML}{F4F4F4}
+\definecolor{boxbg}{HTML}{F4F4F4}
+
+\hypersetup{hidelinks}
+
+% ---------------- headings ----------------
+\titleformat{\section}{\large\bfseries}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.7em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.7em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.5em}
+
+\captionsetup{font=small,labelfont=bf,textfont=it,skip=8pt}
+
+% ---------------- tables ----------------
+% Applies to every tblr: grey header row, hairline rules
+% top / under-header / bottom, no striping.
+\SetTblrInner{
+  row{1}={bg=hdrbg,font=\bfseries},
+  hline{1,2,Z}={0.7pt,solid,rulec},
+  rowsep=2.4pt,
+  colsep=5pt,
+}
+
+% ---------------- code ----------------
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{rulec},
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  framexleftmargin=4pt,
+  framexrightmargin=4pt,
+  aboveskip=1.3em,
+  belowskip=1.3em,
+  commentstyle=\color{muted}\itshape,
+  keywordstyle=\bfseries,
+}
+
+% ---------------- callouts ----------------
+\newtcolorbox{warnbox}[1]{enhanced,breakable,colback=boxbg,colframe=ink,
+  coltitle=white,fonttitle=\bfseries\small,title={#1},boxrule=0.8pt,arc=2pt,
+  left=7pt,right=7pt,top=6pt,bottom=6pt,before skip=1.1em,after skip=1.1em}
+\newtcolorbox{notebox}[1]{enhanced,breakable,colback=boxbg,colframe=rulec,
+  coltitle=ink,colbacktitle=hdrbg,fonttitle=\bfseries\small,title={#1},
+  boxrule=0.8pt,arc=2pt,
+  left=7pt,right=7pt,top=6pt,bottom=6pt,before skip=1.1em,after skip=1.1em}
+
+% ---------------- page furniture ----------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{muted}Capacitive Sensor Sync}
+\fancyhead[R]{\small\color{muted}Configuration and Design Reference}
+\fancyfoot[C]{\small\color{muted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+\newcommand{\photofig}[4]{%
+  \begin{figure}[H]\centering
+  \IfFileExists{figures/photos/#1}%
+    {\includegraphics[width=#4\textwidth]{figures/photos/#1}}%
+    {\setlength{\fboxrule}{0.6pt}\setlength{\fboxsep}{0pt}%
+     \textcolor{rulec}{\fbox{\parbox[c][3.8cm][c]{#4\textwidth}{\centering
+      {\ttfamily\small\color{muted}\detokenize{figures/photos/#1}}\\[3mm]
+      {\itshape\color{muted}add the photograph here}}}}}%
+  \caption{#2}\label{#3}
+  \end{figure}}
+
+% Institution logo on the title page. Drop the file in as
+% figures/polito-logo.pdf (preferred) or figures/polito-logo.png.
+\newcommand{\politologo}{%
+  \IfFileExists{figures/polito-logo.png}%
+    {\includegraphics[
+        trim={0 0 375bp 0},
+        clip,
+        height=4cm
+      ]{figures/polito-logo.png}}%
+    {\setlength{\fboxrule}{0.6pt}\setlength{\fboxsep}{0pt}%
+     \textcolor{rulec}{\fbox{\parbox[c][4cm][c]{7cm}{\centering
+      {\ttfamily\footnotesize\color{muted}\detokenize{figures/polito-logo.png}}\\[2mm]
+      {\itshape\footnotesize\color{muted}add the logo here}}}}}%
+}
+
+\newcommand{\diagfig}[4]{%
+  \begin{figure}[H]\centering
+  \includegraphics[width=#4\textwidth]{figures/#1}
+  \caption{#2}\label{#3}
+  \end{figure}}
+
+\title{\vspace{-1.8cm}
+       \politologo\\[7mm]
+       \textbf{Capacitive Sensor Sync}\\[3mm]
+       \large Configuration and Design Reference}
+\author{Politecnico di Torino\\[1mm]
+        \small Supervisor: Prof.\ Mihai Teodor Lazarescu}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\noindent
+This document is the detailed reference for the Capacitive Sensor Sync project:
+a small wireless network of single-plate capacitive sensor nodes built on the
+STM32L412KB microcontroller and Digi XBee radios, coordinated from MATLAB.
+I wrote down every configuration value the system depends on, covering the clock
+tree, peripheral setup, pin assignment, radio parameters and packet format, so
+that a node can be rebuilt or a radio replaced without re-deriving anything from
+the source code.
+
+The measurement method implemented in the firmware is the slope-modulation
+differential technique published by Subbicini, Lavagno and Lazarescu in the
+IEEE Sensors Journal. The repository \code{README.md} gives the short
+architectural overview; this document holds the detail.
+\end{abstract}
+
+\vspace{1em}
+\tableofcontents
+\newpage
+
+% ================================================================
+\section{System overview}
+% ================================================================
+
+The system reports the capacitance of each sensor plate on demand. A capacitive
+plate changes its capacitance slightly when a person moves near it, and tracking
+that change over time is what makes the plate useful as a presence sensor.
+
+Four sensor nodes each measure their own plate. A MATLAB script on a PC asks all of
+them at once and collects the four answers, so the readings belong to the same
+instant rather than to four separate polls.
+
+\diagfig{system_architecture.pdf}{System architecture. The MATLAB server drives a
+Waspmote gateway over USB; the coordinator radio carried by that gateway
+broadcasts to four identical sensor nodes.}{fig:arch}{1.0}
+
+A full measurement round runs as follows.
+
+\begin{enumerate}[itemsep=3pt,topsep=4pt]
+  \item MATLAB writes a single byte, \code{'r'}, to the gateway.
+  \item The coordinator radio broadcasts that byte. All four nodes receive it at
+        very nearly the same moment.
+  \item Each node leaves its idle state and performs one capacitance
+        measurement, taking about one millisecond.
+  \item Each node waits for a slot determined by its own sensor ID, then
+        transmits a two-byte answer.
+  \item MATLAB collects the answers, sorts them by the ID embedded in each
+        packet, and records anything that failed to arrive.
+\end{enumerate}
+
+The staggered slots in step 4 exist because all four radios share one channel and
+hear the broadcast within microseconds of each other. Answering immediately, they
+would transmit on top of one another. Spacing the replies by sensor ID removes the
+contention, at the cost of a fixed 30\,ms spread across a round.
+
+\diagfig{response_slots.pdf}{Response slots. Each node delays by its sensor ID
+multiplied by ten milliseconds before transmitting, so the four answers arrive
+one after another rather than on top of each other.}{fig:slots}{1.0}
+
+% ================================================================
+\section{Hardware}
+% ================================================================
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,7em]X[l,m]}}
+Item & Detail \\
+Microcontroller & STM32L412KBU6, Arm Cortex-M4F, UFQFPN-32 package \\
+Node radio & Digi XBee 2.4\,GHz, 802.15.4 function set \\
+PC interface & Waspmote Gateway USB module, carrying the coordinator radio \\
+Sensor frontend & Drift-rejection differential circuit, schematic in
+                  \code{Useful\_Material/fediff.pdf} \\
+Programmer & ST-Link V2 or compatible, over SWD \\
+Firmware toolchain & Keil $\mu$Vision 5, MDK-ARM \\
+Configuration tool & STM32CubeMX v6.16.1 \\
+Radio tool & Digi XCTU \\
+Host software & MATLAB R2019b or later \\
+\end{tblr}
+\end{table}
+
+\subsection{Coordinator side}
+
+The PC does not talk to a bare radio. The coordinator XBee sits in a
+\textbf{Waspmote Gateway} USB module, which supplies 3.3\,V to the radio, provides
+the USB-to-serial bridge and exposes it as an ordinary COM port. MATLAB opens that
+port with \code{serialport} and writes bytes to it exactly as a sensor node writes
+bytes to its own radio.
+
+The gateway doubles as the programming jig: XCTU talks to whichever module is
+seated in it, so I configured all five radios through it before installation, which
+kept the parameter set identical across the network.
+
+\subsection{Photographs}
+
+\photofig{sensor-node.jpg}{Assembled sensor node: STM32L412 board, sensor
+frontend and XBee radio.}{fig:node}{0.55}
+
+\photofig{sensor-node2.jpg}{The same node from the side, showing the radio seated
+above the frontend.}{fig:node2}{0.30}
+
+\photofig{frontend.jpg}{Drift-rejection differential frontend.}{fig:frontend}{0.60}
+
+\photofig{coordinator.jpg}{Waspmote Gateway with the coordinator radio seated in
+it.}{fig:coordinator}{0.30}
+
+\photofig{xbee-modules.jpg}{The XBee variants used in the project.}{fig:xbee}{0.62}
+
+
+% ================================================================
+\section{Clock configuration}
+% ================================================================
+
+Everything in the measurement chain is derived from one system clock, which is
+why the two timers stay exactly in step with one another.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]X[l,m]}}
+Parameter & Value \\
+Oscillator & MSI, range 8, calibration value 0 \\
+PLL source & MSI \\
+PLL dividers & M = 1, N = 10, R = /2, Q = /2 \\
+SYSCLK & 80\,MHz \\
+AHB prescaler & /1 \\
+APB1 prescaler & /1 \\
+APB2 prescaler & /1 \\
+Flash latency & 4 wait states \\
+Regulator & Voltage scale 1 \\
+SysTick & 1\,ms, used by \code{HAL\_Delay} and the acquisition timeout \\
+USART1 clock & PCLK2 \\
+USART2 clock & PCLK1 \\
+\end{tblr}
+\caption{System clock configuration, set in \code{SystemClock\_Config()}.}
+\end{table}
+
+% ================================================================
+\section{Pin assignment}
+% ================================================================
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,4em]Q[l,m,9em]X[l,m]}}
+Pin & Function & Notes \\
+PA0  & ADC1\_IN5      & Analogue input from the sensor frontend \\
+PA2  & USART2\_TX     & Debug output, AF7, debug builds only \\
+PA9  & USART1\_TX     & To XBee DIN, AF7 \\
+PA10 & USART1\_RX     & From XBee DOUT, AF7 \\
+PA13 & SWDIO          & Programming and debug \\
+PA14 & SWCLK          & Programming and debug \\
+PA15 & USART2\_RX     & Debug input, AF3 \\
+PB1  & TIM1\_CH3N     & Excitation output to the frontend, AF1 \\
+PB7  & GPIO output    & XBee SLEEP\_RQ, held low \\
+\end{tblr}
+\end{table}
+
+% ================================================================
+\section{Peripheral configuration}
+% ================================================================
+
+\subsection{TIM1, excitation generator}
+
+TIM1 produces the square wave that drives the sensor frontend, and is also the
+timing master for the whole acquisition.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]X[l,m]}}
+Parameter & Value \\
+Prescaler & 79, giving a 1\,MHz counter clock from 80\,MHz \\
+Period (ARR) & 999, giving a 1\,kHz update rate \\
+Counter mode & Up \\
+Output & PWM mode 1 on channel 3, complementary output CH3N \\
+Pulse (CCR) & 500, that is 50\,\% duty cycle \\
+Master output trigger & \code{TIM\_TRGO\_UPDATE} \\
+Break and dead time & Disabled \\
+\end{tblr}
+\end{table}
+
+The excitation period, 1\,ms, appears in the capacitance formula as the constant
+\code{TM\_SEC}.
+
+\subsection{TIM2, ADC sampling clock}
+
+TIM2 exists only to pace the ADC, and is a slave of TIM1.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]X[l,m]}}
+Parameter & Value \\
+Prescaler & 0 \\
+Period (ARR) & 39, giving a 2\,MHz update rate from 80\,MHz \\
+Slave mode & \code{TIM\_SLAVEMODE\_COMBINED\_RESETTRIGGER} \\
+Input trigger & \code{TIM\_TS\_ITR0}, which is TIM1 \\
+Master output trigger & \code{TIM\_TRGO\_UPDATE}, feeding the ADC \\
+\end{tblr}
+\end{table}
+
+\subsection{Phase locking}
+
+Two properties together make the acquisition repeatable.
+
+First, the ratio is exact. Both timers count the same 80\,MHz clock, TIM1 is
+divided to 1\,kHz and TIM2 to 2\,MHz. That is exactly 2000 samples per excitation
+period, with no rounding and no slow drift between them.
+
+Second, the phase is pinned. Because TIM2 is a slave in combined reset-trigger
+mode, every TIM1 update event forces the TIM2 counter back to zero. Sample number
+zero therefore always coincides with an excitation edge, rather than with
+wherever TIM2 happened to be.
+
+\diagfig{adc_frame_timing.pdf}{One excitation period spans exactly 2000 samples.
+The four averaging windows are defined by sample index, and the phase lock is
+what keeps those indices pointing at the same part of the ramp on every
+acquisition.}{fig:timing}{1.0}
+
+Without the phase lock the frame would still be 2000 samples long, but its starting
+offset would differ on every acquisition, since both timers restart for each
+measurement. The averaging windows are defined by fixed sample indices, and those
+indices only carry meaning if index maps to a fixed position on the waveform.
+
+\begin{notebox}{First frame after start-up}
+The hardware reset only acts on a TIM1 update, so it misses the first period after
+the timers start. \code{acquire\_adc\_frame()} therefore clears both counters and
+both update flags in software first. Since the timers restart for every
+measurement, that first period is otherwise the first period of every measurement.
+\end{notebox}
+
+\subsection{ADC1, sampling}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]X[l,m]}}
+Parameter & Value \\
+Resolution & 12 bit, right aligned \\
+Channel & Channel 5 on PA0, single ended \\
+Sampling time & 2.5 cycles \\
+Clock prescaler & \code{ADC\_CLOCK\_ASYNC\_DIV1} \\
+Scan mode & Disabled, one conversion per trigger \\
+Continuous mode & Disabled \\
+External trigger & \code{ADC\_EXTERNALTRIG\_T2\_TRGO}, rising edge \\
+DMA continuous requests & Enabled \\
+Overrun behaviour & Data preserved \\
+Oversampling & Disabled \\
+Calibration & \code{HAL\_ADCEx\_Calibration\_Start()} once at boot \\
+\end{tblr}
+\end{table}
+
+I left continuous conversion mode off. The ADC converts once per trigger and then
+waits, so the sample rate is the trigger rate and nothing else needs tuning to
+match it. A 12-bit conversion takes 2.5 sampling cycles plus 12.5 conversion
+cycles, about 188\,ns, comfortably inside the 500\,ns between triggers.
+
+\subsection{DMA1 channel 1, transfer}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]X[l,m]}}
+Parameter & Value \\
+Instance & \code{DMA1\_Channel1} \\
+Request & \code{DMA\_REQUEST\_0}, the fixed hardware mapping for ADC1 \\
+Direction & Peripheral to memory \\
+Peripheral increment & Disabled, the data register is one fixed address \\
+Memory increment & Enabled \\
+Data width & Half word on both sides, matching \code{uint16\_t} \\
+Mode & \code{DMA\_NORMAL}, one shot \\
+Priority & Low \\
+Interrupt & \code{DMA1\_Channel1\_IRQn}, priority 0 \\
+\end{tblr}
+\end{table}
+
+\diagfig{signal_chain.pdf}{From timer tick to filled buffer. Each stage is
+selected by a register field rather than by any physical wiring, and the whole
+path runs without CPU involvement until the final interrupt.}{fig:chain}{0.68}
+
+Normal mode rather than circular is what makes this a frame instead of a stream:
+the channel disables itself after 2000 transfers. Circular mode would wrap and
+overwrite sample zero while the windows were still reading it, mixing two
+excitation periods into one result with nothing to show it had happened.
+
+\subsection{USART1, radio link}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]X[l,m]}}
+Parameter & Value \\
+Baud rate & 115200 \\
+Frame & 8 data bits, no parity, 1 stop bit \\
+Flow control & None \\
+Oversampling & 16 \\
+Mode & Transmit and receive, polling only \\
+Pins & PA9 transmit, PA10 receive \\
+\end{tblr}
+\end{table}
+
+Reception uses a blocking \code{HAL\_UART\_Receive()} with an infinite timeout.
+An interrupt handler exists in \code{stm32l4xx\_it.c} but its NVIC line is not
+enabled, so the peripheral is genuinely polled.
+
+\subsection{USART2, debug port}
+
+Identical settings on PA2 and PA15. It is compiled in only when
+\code{DEBUG\_UART\_ENABLED} is 1, and is intended for the ST-Link virtual COM
+port.
+
+\subsection{GPIO and interrupts}
+
+PB7 is a push-pull output driving the XBee SLEEP\_RQ line. I write the output latch
+low \emph{before} switching the pin to output mode; the other order presents
+whatever the latch held at reset, and a high there is a valid sleep request.
+
+The only interrupt I enabled in the NVIC is \code{DMA1\_Channel1\_IRQn}. Nothing
+else in the measurement path needs one, and leaving the UART interrupts masked
+keeps the acquisition loop uninterrupted.
+
+% ================================================================
+\section{Measurement algorithm}
+% ================================================================
+
+\subsection{Frame layout}
+
+One acquisition captures \code{FRAME} = 2000 samples, exactly one excitation
+period. The first \code{NR} = 1000 samples cover one voltage ramp and the second
+1000 cover the opposite ramp.
+
+Four windows of \code{NS} = 256 samples are averaged. Each window starts
+\code{NG} = 64 samples away from a ramp edge, because the frontend is still
+settling immediately after a transition and those guard samples are discarded.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[c,m,5em]Q[l,m,11em]Q[l,m,8em]X[l,m]}}
+Window & Start index & Samples & Position \\
+$a_1$ & \code{NG}             & 64--319    & early, first ramp \\
+$a_2$ & \code{NR - NG - NS}   & 680--935   & late, first ramp \\
+$a_3$ & \code{NR + NG}        & 1064--1319 & early, second ramp \\
+$a_4$ & \code{2 NR - NG - NS} & 1680--1935 & late, second ramp \\
+\end{tblr}
+\end{table}
+
+\subsection{Capacitance}
+
+Raw ADC codes are converted to volts, then the two ramp slopes are compared.
+
+\begin{align*}
+a_i                &= \overline{\text{codes}_i} \cdot \frac{V_\text{ref}}{\text{ADC}_\text{FS}} \\[3pt]
+\Delta_\text{fall} &= a_2 - a_1 \\
+\Delta_\text{rise} &= a_4 - a_3 \\
+D                  &= \Delta_\text{rise} - \Delta_\text{fall} \\[5pt]
+C_p                &= \frac{I \cdot T_m}{D} \cdot \frac{N_R - 2 N_G - N_S}{N_R}
+\end{align*}
+
+Taking the difference of the two ramp slopes is what rejects drift. A slow,
+quasi-constant leakage current shifts both ramps in the same direction and
+cancels in $D$, which is the property the source paper is built around.
+
+If $|D| < 1\,\mu$V the result is rejected and the function returns $-1$, which
+the caller turns into the error payload. The sign of $C_p$ depends on the
+physical polarity of the CH3N output, so its absolute value is taken.
+
+\subsection{Constants}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,12em]Q[l,m,5em]X[l,m]}}
+Constant & Value & Meaning \\
+\code{SENSOR\_ID}              & 0--3     & Node identity, packed into the two top bits \\
+\code{RESPONSE\_SLOT\_MS}      & 10       & Slot width, node waits ID $\times$ 10\,ms \\
+\code{DEBUG\_UART\_ENABLED}    & 0 or 1   & Compiles in USART2 and text output \\
+\code{NR}                      & 1000     & Samples per half period \\
+\code{FRAME}                   & 2000     & Samples per acquisition \\
+\code{NS}                      & 256      & Averaging window length \\
+\code{NG}                      & 64       & Guard samples at each ramp edge \\
+\code{ADC\_FS}                 & 4095     & 12-bit full scale \\
+\code{VREF}                    & 3.300\,V & ADC reference voltage \\
+\code{I\_FRONTEND}             & 40\,nA   & Frontend excitation current \\
+\code{TM\_SEC}                 & 1\,ms    & Excitation period \\
+\code{ADC\_FRAME\_TIMEOUT\_MS} & 20       & Guard against a frame that never completes \\
+\code{CAP\_SCALE\_PER\_PF}     & 10       & Payload resolution, 0.1\,pF per count \\
+\code{CAP\_PAYLOAD\_MAX}       & 0x3FFE   & Largest valid payload, 1638.2\,pF \\
+\code{CAP\_PAYLOAD\_ERROR}     & 0x3FFF   & Reserved error value \\
+\end{tblr}
+\end{table}
+
+Two compile-time assertions guard these values: \code{SENSOR\_ID} fits in two bits,
+and \code{2 NG + NS} is smaller than \code{NR}. Both failures are silent at
+runtime. An oversized ID corrupts the payload bits it overflows into, and window
+parameters that do not fit average the wrong samples into a plausible-looking
+result. I made them build errors instead.
+
+% ================================================================
+\section{Communication protocol}
+% ================================================================
+
+\subsection{Request}
+
+One byte. MATLAB sends lowercase \code{'r'} and the firmware accepts \code{'r'}
+or \code{'R'}. Anything else is ignored, so stray bytes on the channel do not
+trigger a measurement.
+
+\subsection{Response}
+
+Two bytes, most significant first.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,9em]Q[l,m,6em]X[l,m]}}
+Field & Bits & Contents \\
+Sensor ID & 15--14 & Node identity, 0 to 3 \\
+Payload   & 13--0  & Capacitance in units of 0.1\,pF \\
+\end{tblr}
+\end{table}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,13em]X[l,m]}}
+Payload & Meaning \\
+0x0000 to 0x3FFE & Valid reading, 0 to 1638.2\,pF \\
+0x3FFF           & Measurement failed \\
+\end{tblr}
+\end{table}
+
+Valid readings are clamped at 0x3FFE so 0x3FFF stays reserved. Every request gets
+an answer, including the ones where the measurement failed, so the coordinator can
+tell an error apart from silence. If a failure simply produced no reply, a broken
+frontend would look identical to a node out of radio range.
+
+\begin{lstlisting}[language=C,caption={Packing, from \texttt{pack\_measurement()}.}]
+float scaled = cp_farad * 1.0e12f * CAP_SCALE_PER_PF;
+payload = (uint16_t)(scaled + 0.5f);      /* round, then clamp to 0x3FFE */
+return (uint16_t)(((SENSOR_ID & 0x0003U) << 14) | (payload & 0x3FFFU));
+\end{lstlisting}
+
+\begin{lstlisting}[language=Matlab,caption={Unpacking, from \texttt{server.m}.}]
+packet        = bitor(bitshift(uint16(bytes(1)), 8), uint16(bytes(2)));
+transmitterID = double(bitand(bitshift(packet, -14), uint16(3)));
+sensorValue   = double(bitand(packet, uint16(hex2dec("3FFF"))));
+\end{lstlisting}
+
+% ================================================================
+\section{XBee radio configuration}
+% ================================================================
+
+\subsection{Modules in use}
+
+Three hardware variants are present in the project.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,13em]Q[l,m,12em]X[l,m]}}
+Variant & Marking & Notes \\
+Legacy XBee S1     & \code{IC: 4214A-XBEE}    & Standard output power \\
+Legacy XBee-PRO S1 & \code{IC: 4214A-XBEEPRO} & Higher transmit current \\
+XBee S2C           & \code{XB24CZ7PIT}        & S2CTH family \\
+\end{tblr}
+\end{table}
+
+The hardware revisions differ, so all three are loaded with the same Digi
+\textbf{XBee 802.15.4} function set in order to interoperate.
+
+\begin{warnbox}{Why I reflashed the S2C modules}
+The S2C units arrived running Zigbee, which the legacy S1 radios cannot talk to,
+so I reflashed each one to the XBee 802.15.4 function set in XCTU. On Zigbee they
+form their own network and never appear to the coordinator, which looks like a
+dead node rather than a firmware mismatch.
+\end{warnbox}
+
+\subsection{Wiring to the STM32}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,8em]Q[c,m,6em]Q[l,m,11em]X[l,m]}}
+XBee signal & XBee pin & STM32 & Direction \\
+VCC       & 1  & 3.3\,V            & --- \\
+DOUT      & 2  & USART1\_RX (PA10) & radio to MCU \\
+DIN       & 3  & USART1\_TX (PA9)  & MCU to radio \\
+SLEEP\_RQ & 9  & GPIO PB7          & MCU to radio \\
+GND       & 10 & GND               & --- \\
+\end{tblr}
+\end{table}
+
+The link settings are those of USART1 above. The rate only governs the wire between
+an STM32 and its own radio, not the air interface, so nodes could differ. I kept
+them identical anyway: a node that is out only by baud rate fails exactly like one
+with a radio fault.
+
+\subsection{Transparent mode}
+
+The radios run with \code{AP = 0}, transparent mode. Bytes written to the radio's
+serial input are packetised and transmitted automatically, and received payload
+appears directly on the receiving radio's serial output. No API frames are
+constructed or parsed anywhere in the firmware, which is why the STM32 side is
+just \code{HAL\_UART\_Transmit} and \code{HAL\_UART\_Receive}.
+
+\subsection{Network parameters}
+
+All radios share the same function set, PAN ID (\code{ID}), RF channel (\code{CH}),
+MAC mode (\code{MM}) and encryption settings, since any mismatch silently blocks
+association. I picked channel \code{0x0C} because both the legacy XBee and the
+XBee-PRO support it; a channel only one of them covers would split the network
+along hardware lines.
+
+Each node carries its own 16-bit source address in \code{MY}. For unicast back to
+the coordinator I set each node's \code{DL} to the coordinator's \code{MY}. The
+coordinator uses the broadcast destination, which is what lets one request byte
+reach all four nodes at once.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,13em]Q[c,m,5em]X[l,m]}}
+Device & \code{MY} & \code{DL} \\
+Sensor node 1 & 1 & coordinator address \\
+Sensor node 2 & 2 & coordinator address \\
+Sensor node 3 & 3 & coordinator address \\
+Sensor node 4 & 4 & coordinator address \\
+\end{tblr}
+\caption{Example addressing scheme. The radio address in \code{MY} is separate
+from the \code{SENSOR\_ID} compiled into the firmware, and keeping the two
+consistent makes debugging easier.}
+\end{table}
+
+\subsection{Sleep}
+
+Sleep is disabled in XCTU with \code{SM = 0}. The SLEEP\_RQ pin is nevertheless
+wired to PB7, and the firmware drives it low at all times.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,13em]X[l,m]}}
+SLEEP\_RQ level & Radio state \\
+Low  & Awake \\
+High & Sleep requested \\
+\end{tblr}
+\end{table}
+
+I drive the line rather than leave it floating so that enabling a pin sleep mode
+later cannot put a radio to sleep mid-round, which would show up as one node
+intermittently missing from the results.
+
+\subsection{Unused radio I/O}
+
+On the sensor PCB, XBee pins 11 and 20 are connected to ground. These are not
+mechanical or reserved pins, they are configurable GPIO and ADC lines: pin 11 is
+\code{AD4 / DIO4} and pin 20 is \code{AD0 / DIO0}.
+
+\begin{warnbox}{Why pins 11 and 20 stay disabled}
+I configured both lines off, \code{D4 = 0} and \code{D0 = 0}, because the PCB ties
+them to ground. Enabled as a digital output and driven high, either would short
+the radio's driver straight to ground. The other unused GPIOs are off for the
+same reason.
+\end{warnbox}
+
+\subsection{XCTU settings summary}
+
+\begin{lstlisting}[caption={Typical sensor-node profile.}]
+Function Set : XBee 802.15.4
+ID           : common PAN ID
+CH           : common RF channel
+MY           : unique node address
+DH           : 0
+DL           : coordinator address
+AP           : 0        # transparent mode
+SM           : 0        # sleep disabled
+EE           : 0        # encryption off during development
+D4           : 0        # pin 11 disabled
+D0           : 0        # pin 20 disabled
+BD           : 115200
+NB           : 0        # no parity
+\end{lstlisting}
+
+I wrote this profile and read it back in XCTU through the gateway before seating
+each module in its PCB. \code{D4} and \code{D0} in particular cannot be corrected
+safely once the module is in place.
+
+% ================================================================
+\section{Firmware behaviour}
+% ================================================================
+
+\begin{enumerate}[itemsep=4pt,topsep=4pt]
+  \item \textbf{Boot.} The HAL starts, the clock tree is configured, and every
+        peripheral is initialised once. Peripherals are started and stopped for
+        each measurement afterwards, but never re-initialised.
+  \item \textbf{Radio wake.} PB7 is driven low.
+  \item \textbf{ADC calibration.} Run once while the ADC is idle. Failure calls
+        \code{Error\_Handler()}.
+  \item \textbf{Idle.} The node blocks in \code{HAL\_UART\_Receive()} on USART1
+        with no timeout. A receive error aborts and re-arms the receiver rather
+        than leaving the node deaf.
+  \item \textbf{Acquisition.} On \code{'r'} or \code{'R'}, both timer counters
+        are cleared, then the ADC with DMA, TIM2 and TIM1 CH3N are started in
+        that order. The loop waits for the transfer-complete flag with a 20\,ms
+        timeout. \code{stop\_acquisition()} always runs afterwards, whether the
+        frame succeeded, failed or timed out.
+  \item \textbf{Computation.} \code{compute\_cp\_farad()} averages the four
+        windows and solves for capacitance.
+  \item \textbf{Response.} The node waits for its slot, packs the value with its
+        ID, and transmits two bytes on USART1. In a debug build it also prints a
+        readable line on USART2.
+\end{enumerate}
+
+% ================================================================
+\section{MATLAB server}
+% ================================================================
+
+\subsection{Configuration}
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,11em]Q[l,m,6em]X[l,m]}}
+Variable & Default & Meaning \\
+\code{portName}        & \code{"COM8"} & COM port presented by the Waspmote gateway \\
+\code{baudRate}        & 115200        & Must match the radio's \code{BD} \\
+\code{numberOfSamples} & 100           & Number of request rounds \\
+\code{roundTimeout}    & 0.20\,s       & Longest wait for all four answers \\
+\code{interRoundDelay} & 0.010\,s      & Idle time between rounds \\
+\end{tblr}
+\end{table}
+
+At start-up the script prints \code{serialportlist("available")}, which is the
+quickest way to find the right port.
+
+\subsection{Per-round behaviour}
+
+I flush the input buffer at the start of every round. A packet that arrived after
+the previous round timed out would otherwise be read as the first reply of the new
+one, shifting that node's readings a round late for the rest of the run. Packets
+are then read until all four IDs answer or the timeout expires. A duplicate from
+an ID already seen is discarded rather than overwriting the first, and nodes that
+never answered stay \code{NaN}, so a missing reading is never confused with a
+zero one.
+
+\subsection{Saved results}
+
+Everything is written to \code{four\_transmitter\_results.mat}.
+
+\begin{table}[H]\centering\small
+\begin{tblr}{width=\linewidth,colspec={Q[l,m,14em]Q[c,m,5em]X[l,m]}}
+Variable & Size & Contents \\
+\code{transmitter0Values} \dots    & $N \times 1$ & Raw payload per round, \code{NaN} if missing \\
+\code{transmitter0Received} \dots  & $N \times 1$ & Logical reception mask \\
+\code{transmitter0ArrivalMs} \dots & $N \times 1$ & Arrival time in ms after the request \\
+\code{sensorValues}                & $N \times 4$ & All four nodes, columns are IDs 0 to 3 \\
+\code{arrivalTimeMs}               & $N \times 4$ & Same layout, arrival times \\
+\code{incompleteRoundCount}        & scalar       & Rounds with at least one node missing \\
+\code{duplicatePacketCount}        & scalar       & Repeated answers from one ID in a round \\
+\code{unexpectedPacketCount}       & scalar       & Stays zero, the ID field is two bits \\
+\code{baudRate}, \code{roundTimeout} & scalar     & Run configuration \\
+\end{tblr}
+\end{table}
+
+\begin{notebox}{Units and the error value}
+The stored values are raw payloads in units of 0.1\,pF, and the script does not yet
+special-case 16383. Averaged as they stand, the sentinel enters as a 1638.3\,pF
+reading, large enough to dominate the mean and to look like a real event. The two
+lines below fix both.
+\end{notebox}
+
+\begin{lstlisting}[language=Matlab]
+sensorValues(sensorValues == 16383) = NaN;
+capacitance_pF = sensorValues / 10;
+\end{lstlisting}
+
+
+\section{Future milestones}
+
+\subsection{XBee-PRO current draw}
+The XBee-PRO variant draws much more current while transmitting than the standard
+XBee, and I have not yet checked the 3.3\,V rail under transmit load on the nodes
+carrying one. A rail that sags during a burst also disturbs the analogue frontend,
+so the corrupted measurement that follows would look like a sensor fault rather
+than a supply problem.
+
+\subsection{Fixing the sensor boards}
+Several resistors and capacitors are missing from the sensor boards and need to be
+replaced before those nodes can be trusted. On the board I tested, R7 is gone
+along with the C1 connection to the inverting op-amp input at R3, and the node
+reports an implausibly large capacitance as a result. The other boards share the
+same problem to varying degrees.
+
+\subsection{Data analysis and modelling}
+Once all four nodes report reliable values, the next step is to remove outliers
+from the collected dataset and feed the four-channel data to a model of the
+environment at run time, which was the original purpose of the array.
+
+% ================================================================
+\section*{Reference}
+\addcontentsline{toc}{section}{Reference}
+% ================================================================
+
+G.~Subbicini, L.~Lavagno and M.~T.~Lazarescu,
+``Drift Rejection Differential Frontend for Single Plate Capacitive Sensors,''
+\emph{IEEE Sensors Journal}, vol.~22, no.~16, pp.~16141--16149, 15 August 2022.
+\href{https://doi.org/10.1109/JSEN.2022.3189031}{doi:10.1109/JSEN.2022.3189031}
+
+\end{document}

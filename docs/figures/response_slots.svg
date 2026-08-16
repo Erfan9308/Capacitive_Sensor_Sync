@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="154" viewBox="0 0 680 154" role="img">
+<title>Response time slots</title>
+<desc>After one broadcast request, each sensor node replies in a slot ten milliseconds apart, determined by its sensor ID.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.th{font-size:14px;font-weight:500}.ts{font-size:12px}
+.b-b{fill:#DDF4FF;stroke:#54AEFF;stroke-width:1.2}.b-t{fill:#0A3069}
+.g-b{fill:#DAFBE1;stroke:#4AC26B;stroke-width:1.2}.g-t{fill:#0A3622}
+.a-b{fill:#FFF8C5;stroke:#D4A72C;stroke-width:1.2}.a-t{fill:#7D4E00}
+.p-b{fill:#FBEFFF;stroke:#C297FF;stroke-width:1.2}.p-t{fill:#512A97}
+.mut{fill:#59636E}
+.ax{stroke:#AFB8C1;stroke-width:1}
+.dash{stroke:#FF8182;stroke-width:1.4;stroke-dasharray:4 3;fill:none}
+.req{fill:#B35900}
+@media (prefers-color-scheme:dark){
+.b-b{fill:#121D2F;stroke:#1F6FEB}.b-t{fill:#A5D6FF}
+.g-b{fill:#0F2417;stroke:#2EA043}.g-t{fill:#7EE787}
+.a-b{fill:#2B2412;stroke:#9E6A03}.a-t{fill:#F0C674}
+.p-b{fill:#211047;stroke:#8957E5}.p-t{fill:#D2A8FF}
+.mut{fill:#9198A1}.ax{stroke:#3D444D}.dash{stroke:#F85149}.req{fill:#FF7B72}
+}
+</style>
+
+<text class="ts req" x="120" y="32" text-anchor="middle">request</text>
+<line class="dash" x1="120" y1="40" x2="120" y2="100"/>
+
+<rect class="b-b" x="132" y="48" width="46" height="32" rx="5"/>
+<text class="th b-t" x="155" y="68" text-anchor="middle">id 0</text>
+<rect class="g-b" x="252" y="48" width="46" height="32" rx="5"/>
+<text class="th g-t" x="275" y="68" text-anchor="middle">id 1</text>
+<rect class="a-b" x="372" y="48" width="46" height="32" rx="5"/>
+<text class="th a-t" x="395" y="68" text-anchor="middle">id 2</text>
+<rect class="p-b" x="492" y="48" width="46" height="32" rx="5"/>
+<text class="th p-t" x="515" y="68" text-anchor="middle">id 3</text>
+
+<line class="ax" x1="120" y1="96" x2="600" y2="96"/>
+<line class="ax" x1="120" y1="96" x2="120" y2="102"/>
+<line class="ax" x1="240" y1="96" x2="240" y2="102"/>
+<line class="ax" x1="360" y1="96" x2="360" y2="102"/>
+<line class="ax" x1="480" y1="96" x2="480" y2="102"/>
+<line class="ax" x1="600" y1="96" x2="600" y2="102"/>
+<text class="ts mut" x="120" y="116" text-anchor="middle">0</text>
+<text class="ts mut" x="240" y="116" text-anchor="middle">10</text>
+<text class="ts mut" x="360" y="116" text-anchor="middle">20</text>
+<text class="ts mut" x="480" y="116" text-anchor="middle">30</text>
+<text class="ts mut" x="600" y="116" text-anchor="middle">40</text>
+<text class="ts mut" x="360" y="138" text-anchor="middle">time after request (ms)</text>
+</svg>

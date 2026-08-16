@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="484" viewBox="0 0 680 484" role="img">
+<title>TIM2 to ADC to DMA signal chain</title>
+<desc>TIM2 update generates a trigger pulse at 2 MHz, the ADC converts one sample per pulse, and DMA1 channel 1 copies each result into adcBuf, signalling completion after 2000 transfers.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.th{font-size:14px;font-weight:500}.ts{font-size:12px}
+.a-b{fill:#FFF8C5;stroke:#D4A72C;stroke-width:1.2}.a-t{fill:#7D4E00}.a-s{fill:#9A6700}
+.b-b{fill:#DDF4FF;stroke:#54AEFF;stroke-width:1.2}.b-t{fill:#0A3069}.b-s{fill:#0969DA}
+.g-b{fill:#DAFBE1;stroke:#4AC26B;stroke-width:1.2}.g-t{fill:#0A3622}.g-s{fill:#1A7F37}
+.p-b{fill:#FBEFFF;stroke:#C297FF;stroke-width:1.2}.p-t{fill:#512A97}.p-s{fill:#8250DF}
+.n-b{fill:#F6F8FA;stroke:#D1D9E0;stroke-width:1.2}.n-t{fill:#1F2328}.n-s{fill:#59636E}
+.mut{fill:#59636E}
+.ln{stroke:#59636E;stroke-width:1.6;fill:none}
+.ah{fill:none;stroke:#59636E;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-color-scheme:dark){
+.a-b{fill:#2B2412;stroke:#9E6A03}.a-t{fill:#F0C674}.a-s{fill:#D9A441}
+.b-b{fill:#121D2F;stroke:#1F6FEB}.b-t{fill:#A5D6FF}.b-s{fill:#79C0FF}
+.g-b{fill:#0F2417;stroke:#2EA043}.g-t{fill:#7EE787}.g-s{fill:#56D364}
+.p-b{fill:#211047;stroke:#8957E5}.p-t{fill:#D2A8FF}.p-s{fill:#B689F7}
+.n-b{fill:#151B23;stroke:#3D444D}.n-t{fill:#E6EDF3}.n-s{fill:#9198A1}
+.mut{fill:#9198A1}.ln,.ah{stroke:#9198A1}
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ah" d="M2 1L8 5L2 9"/></marker></defs>
+
+<rect class="a-b" x="230" y="46" width="210" height="48" rx="5"/>
+<text class="th a-t" x="335" y="66" text-anchor="middle">tim2</text>
+<text class="ts a-s" x="335" y="83" text-anchor="middle">arr = 39, update at 2 mhz</text>
+
+<line class="ln" x1="335" y1="94" x2="335" y2="114" marker-end="url(#a)"/>
+<text class="ts mut" x="455" y="110">trgo pulse every 500 ns</text>
+
+<rect class="b-b" x="230" y="118" width="210" height="48" rx="5"/>
+<text class="th b-t" x="335" y="138" text-anchor="middle">adc1 trigger input</text>
+<text class="ts b-s" x="335" y="155" text-anchor="middle">extsel = t2_trgo, rising</text>
+
+<line class="ln" x1="335" y1="166" x2="335" y2="186" marker-end="url(#a)"/>
+<text class="ts mut" x="455" y="182">start of conversion</text>
+
+<rect class="b-b" x="230" y="190" width="210" height="48" rx="5"/>
+<text class="th b-t" x="335" y="210" text-anchor="middle">adc1 conversion</text>
+<text class="ts b-s" x="335" y="227" text-anchor="middle">channel 5, 12-bit, single</text>
+
+<line class="ln" x1="335" y1="238" x2="335" y2="258" marker-end="url(#a)"/>
+<text class="ts mut" x="455" y="254">eoc raises dma request</text>
+
+<rect class="g-b" x="230" y="262" width="210" height="48" rx="5"/>
+<text class="th g-t" x="335" y="282" text-anchor="middle">dma1 channel 1</text>
+<text class="ts g-s" x="335" y="299" text-anchor="middle">request 0 = adc1</text>
+
+<line class="ln" x1="335" y1="310" x2="335" y2="330" marker-end="url(#a)"/>
+<text class="ts mut" x="455" y="326">halfword to adcbuf[i], i++</text>
+
+<rect class="n-b" x="230" y="334" width="210" height="48" rx="5"/>
+<text class="th n-t" x="335" y="354" text-anchor="middle">adcbuf[2000]</text>
+<text class="ts n-s" x="335" y="371" text-anchor="middle">normal mode, one shot</text>
+
+<line class="ln" x1="335" y1="382" x2="335" y2="402" marker-end="url(#a)"/>
+<text class="ts mut" x="455" y="398">cndtr hits 0</text>
+
+<rect class="p-b" x="230" y="406" width="210" height="48" rx="5"/>
+<text class="th p-t" x="335" y="426" text-anchor="middle">adcframeready = 1</text>
+<text class="ts p-s" x="335" y="443" text-anchor="middle">transfer complete callback</text>
+</svg>

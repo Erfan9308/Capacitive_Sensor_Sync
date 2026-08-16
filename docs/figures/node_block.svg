@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="392" viewBox="0 0 680 392" role="img">
+<title>Sensor node block diagram</title>
+<desc>Inside the STM32, TIM1 generates the excitation and clocks TIM2, which triggers the ADC; DMA fills a 2000-sample buffer, the firmware computes plate capacitance and sends it out over USART1 to the XBee radio.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.th{font-size:14px;font-weight:500}.ts{font-size:11.5px}
+.a-b{fill:#FFF8C5;stroke:#D4A72C;stroke-width:1.3}.a-t{fill:#7D4E00}.a-s{fill:#9A6700}
+.b-b{fill:#DDF4FF;stroke:#54AEFF;stroke-width:1.3}.b-t{fill:#0A3069}.b-s{fill:#0969DA}
+.g-b{fill:#DAFBE1;stroke:#4AC26B;stroke-width:1.3}.g-t{fill:#0A3622}.g-s{fill:#1A7F37}
+.p-b{fill:#FBEFFF;stroke:#C297FF;stroke-width:1.3}.p-t{fill:#512A97}.p-s{fill:#8250DF}
+.n-b{fill:#F6F8FA;stroke:#AFB8C1;stroke-width:1.3}.n-t{fill:#1F2328}.n-s{fill:#59636E}
+.mcu{fill:none;stroke:#8C959F;stroke-width:1.3;stroke-dasharray:6 4}
+.mcu-t{fill:#59636E;font-size:12px;font-weight:500;letter-spacing:0.4px}
+.mut{fill:#59636E}
+.ln{stroke:#59636E;stroke-width:1.7;fill:none}
+.ah{fill:none;stroke:#59636E;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-color-scheme:dark){
+.a-b{fill:#2B2412;stroke:#9E6A03}.a-t{fill:#F0C674}.a-s{fill:#D9A441}
+.b-b{fill:#121D2F;stroke:#1F6FEB}.b-t{fill:#A5D6FF}.b-s{fill:#79C0FF}
+.g-b{fill:#0F2417;stroke:#2EA043}.g-t{fill:#7EE787}.g-s{fill:#56D364}
+.p-b{fill:#211047;stroke:#8957E5}.p-t{fill:#D2A8FF}.p-s{fill:#B689F7}
+.n-b{fill:#151B23;stroke:#3D444D}.n-t{fill:#E6EDF3}.n-s{fill:#9198A1}
+.mcu{stroke:#6E7681}.mcu-t{fill:#9198A1}
+.mut{fill:#9198A1}.ln,.ah{stroke:#9198A1}
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ah" d="M2 1L8 5L2 9"/></marker></defs>
+
+<rect class="n-b" x="80" y="30" width="470" height="44" rx="5"/>
+<text class="th n-t" x="315" y="49" text-anchor="middle">sensor plate and drift-rejection frontend</text>
+<text class="ts n-s" x="315" y="65" text-anchor="middle">external circuit, 40 na charge and discharge</text>
+
+<rect class="mcu" x="30" y="92" width="610" height="208" rx="7"/>
+<text class="mcu-t" x="628" y="112" text-anchor="end">stm32l412kb</text>
+
+<line class="ln" x1="110" y1="125" x2="110" y2="80" marker-end="url(#a)"/>
+<text class="ts mut" x="118" y="106">ch3n · pb1</text>
+<line class="ln" x1="410" y1="78" x2="410" y2="121" marker-end="url(#a)"/>
+<text class="ts mut" x="418" y="106">pa0</text>
+
+<rect class="a-b" x="50" y="125" width="120" height="44" rx="5"/>
+<text class="th a-t" x="110" y="144" text-anchor="middle">tim1</text>
+<text class="ts a-s" x="110" y="160" text-anchor="middle">1 khz excitation</text>
+
+<line class="ln" x1="170" y1="147" x2="196" y2="147" marker-end="url(#a)"/>
+<text class="ts mut" x="185" y="138" text-anchor="middle">trgo</text>
+
+<rect class="a-b" x="200" y="125" width="120" height="44" rx="5"/>
+<text class="th a-t" x="260" y="144" text-anchor="middle">tim2</text>
+<text class="ts a-s" x="260" y="160" text-anchor="middle">2 mhz trigger</text>
+
+<line class="ln" x1="320" y1="147" x2="346" y2="147" marker-end="url(#a)"/>
+<text class="ts mut" x="335" y="138" text-anchor="middle">trgo</text>
+
+<rect class="b-b" x="350" y="125" width="120" height="44" rx="5"/>
+<text class="th b-t" x="410" y="144" text-anchor="middle">adc1</text>
+<text class="ts b-s" x="410" y="160" text-anchor="middle">one per trigger</text>
+
+<line class="ln" x1="470" y1="147" x2="496" y2="147" marker-end="url(#a)"/>
+<text class="ts mut" x="485" y="138" text-anchor="middle">eoc</text>
+
+<rect class="g-b" x="500" y="125" width="120" height="44" rx="5"/>
+<text class="th g-t" x="560" y="144" text-anchor="middle">dma1 ch1</text>
+<text class="ts g-s" x="560" y="160" text-anchor="middle">no cpu involved</text>
+
+<line class="ln" x1="560" y1="169" x2="560" y2="211" marker-end="url(#a)"/>
+<text class="ts mut" x="552" y="193" text-anchor="end">one shot</text>
+
+<rect class="n-b" x="500" y="215" width="120" height="44" rx="5"/>
+<text class="th n-t" x="560" y="234" text-anchor="middle">adcbuf[2000]</text>
+<text class="ts n-s" x="560" y="250" text-anchor="middle">one period</text>
+
+<line class="ln" x1="500" y1="237" x2="434" y2="237" marker-end="url(#a)"/>
+<text class="ts mut" x="467" y="228" text-anchor="middle">4 windows</text>
+
+<rect class="b-b" x="310" y="215" width="120" height="44" rx="5"/>
+<text class="th b-t" x="370" y="234" text-anchor="middle">compute cp</text>
+<text class="ts b-s" x="370" y="250" text-anchor="middle">slope difference</text>
+
+<line class="ln" x1="310" y1="237" x2="244" y2="237" marker-end="url(#a)"/>
+<text class="ts mut" x="277" y="228" text-anchor="middle">2 bytes</text>
+
+<rect class="p-b" x="120" y="215" width="120" height="44" rx="5"/>
+<text class="th p-t" x="180" y="234" text-anchor="middle">usart1</text>
+<text class="ts p-s" x="180" y="250" text-anchor="middle">115200 8n1</text>
+
+<line class="ln" x1="180" y1="259" x2="180" y2="321" marker-end="url(#a)"/>
+<text class="ts mut" x="188" y="293">id + capacitance</text>
+
+<rect class="n-b" x="120" y="325" width="120" height="44" rx="5"/>
+<text class="th n-t" x="180" y="344" text-anchor="middle">xbee radio</text>
+<text class="ts n-s" x="180" y="360" text-anchor="middle">802.15.4</text>
+</svg>

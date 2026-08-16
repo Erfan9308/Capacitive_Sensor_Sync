@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="262" viewBox="0 0 680 262" role="img">
+<title>Phase-locked ADC frame</title>
+<desc>One 1 ms excitation period spans exactly 2000 ADC samples. The TIM1 update event resets the TIM2 counter, so the four fixed averaging windows always land on the same part of the plate voltage ramps.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.ts{font-size:12px}.tm{font-size:12px;font-weight:500}
+.mut{fill:#59636E}
+.b-b{fill:#DDF4FF;stroke:#54AEFF;stroke-width:1.2}.b-t{fill:#0A3069}
+.g-b{fill:#DAFBE1;stroke:#4AC26B;stroke-width:1.2}.g-t{fill:#0A3622}
+.exc{stroke:#BC4C00;stroke-width:1.8;fill:none}
+.plate{stroke:#0969DA;stroke-width:1.8;fill:none}
+.exc-t{fill:#BC4C00}.plate-t{fill:#0969DA}
+.ax{stroke:#AFB8C1;stroke-width:1}
+.dash{stroke:#8250DF;stroke-width:1.3;stroke-dasharray:4 3;fill:none}
+.dash-t{fill:#6639BA}
+.faint{stroke:#D1D9E0;stroke-width:1;stroke-dasharray:3 4;fill:none}
+@media (prefers-color-scheme:dark){
+.mut{fill:#9198A1}
+.b-b{fill:#121D2F;stroke:#1F6FEB}.b-t{fill:#A5D6FF}
+.g-b{fill:#0F2417;stroke:#2EA043}.g-t{fill:#7EE787}
+.exc{stroke:#FFA657}.plate{stroke:#79C0FF}
+.exc-t{fill:#FFA657}.plate-t{fill:#79C0FF}
+.ax{stroke:#3D444D}.dash{stroke:#A371F7}.dash-t{fill:#D2A8FF}.faint{stroke:#3D444D}
+}
+</style>
+
+<text class="tm dash-t" x="150" y="42">tim1 update, tim2 counter = 0</text>
+<text class="tm dash-t" x="640" y="42" text-anchor="end">next update, reset again</text>
+
+<line class="dash" x1="150" y1="50" x2="150" y2="222"/>
+<line class="dash" x1="640" y1="50" x2="640" y2="222"/>
+<line class="faint" x1="395" y1="60" x2="395" y2="215"/>
+
+<text class="tm exc-t" x="40" y="82">excitation</text>
+<path class="exc" d="M150 66 L395 66 L395 92 L640 92"/>
+
+<text class="tm plate-t" x="40" y="162">plate voltage</text>
+<rect class="b-b" x="165.7" y="132" width="62.7" height="52" rx="5"/>
+<rect class="b-b" x="316.6" y="132" width="62.7" height="52" rx="5"/>
+<rect class="g-b" x="410.7" y="132" width="62.7" height="52" rx="5"/>
+<rect class="g-b" x="561.6" y="132" width="62.7" height="52" rx="5"/>
+<path class="plate" d="M150 138 L395 178 L640 138"/>
+
+<text class="ts b-t" x="197" y="198" text-anchor="middle">a1 · 64–319</text>
+<text class="ts b-t" x="347.9" y="198" text-anchor="middle">a2 · 680–935</text>
+<text class="ts g-t" x="442" y="198" text-anchor="middle">a3 · 1064–1319</text>
+<text class="ts g-t" x="592.9" y="198" text-anchor="middle">a4 · 1680–1935</text>
+
+<text class="ts mut" x="40" y="219">sample index</text>
+<line class="ax" x1="150" y1="215" x2="640" y2="215"/>
+<line class="ax" x1="150" y1="215" x2="150" y2="221"/>
+<line class="ax" x1="395" y1="215" x2="395" y2="221"/>
+<line class="ax" x1="640" y1="215" x2="640" y2="221"/>
+<text class="ts mut" x="150" y="234" text-anchor="middle">0</text>
+<text class="ts mut" x="395" y="234" text-anchor="middle">1000</text>
+<text class="ts mut" x="640" y="234" text-anchor="end">2000</text>
+</svg>
